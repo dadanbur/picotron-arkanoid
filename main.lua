@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-27 08:17:33",revision=159]]
+--[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-27 10:00:18",revision=219]]
 include "./palette.lua"
 
 SCREEN_WIDTH  = 480
@@ -9,16 +9,23 @@ LEFT_MARGIN = 25
 FRAME_SIZE  = 8
 
 GAME_WIDTH  = 222
-GAME_HEIGHT = 208
+GAME_HEIGHT = 254
+
+GAME_BOTTOM = SCREEN_HEIGHT
 
 FRAME_WIDTH  = GAME_WIDTH + FRAME_SIZE * 2
 FRAME_HEIGHT = GAME_HEIGHT + FRAME_SIZE
 
 FRAME_X = LEFT_MARGIN
-FRAME_Y = TOP_MARGIN
 
 GAME_X = FRAME_X + FRAME_SIZE
-GAME_Y = FRAME_Y + FRAME_SIZE
+--GAME_Y = FRAME_Y + FRAME_SIZE
+GAME_Y = SCREEN_HEIGHT - GAME_HEIGHT
+
+GAME_RIGHT = GAME_X + GAME_WIDTH - 1
+
+--FRAME_Y = TOP_MARGIN
+FRAME_Y = GAME_Y - FRAME_SIZE
 
 HUD_X = FRAME_X + FRAME_WIDTH
 HUD_Y = 0
@@ -27,7 +34,7 @@ HUD_HEIGHT = SCREEN_HEIGHT
 
 PADDLE_WIDTH  = 32
 PADDLE_HEIGHT = 8
-PADDLE_BOTTOM_MARGIN = 16
+PADDLE_BOTTOM_MARGIN = 18
 
 BRICK_WIDTH  = 16
 BRICK_HEIGHT = 8
@@ -43,6 +50,7 @@ pad = {
 	y = SCREEN_HEIGHT - (PADDLE_HEIGHT + PADDLE_BOTTOM_MARGIN),
 	width = PADDLE_WIDTH,
 	height = PADDLE_HEIGHT,
+	sprite = 8,
 	dx = 0
 }
 
@@ -56,6 +64,7 @@ ball = {
 	r = 3,
 	dx = d,
 	dy = -d,
+	sprite = 1,
 	speed = 2.5,
 	stuck = true
 }
@@ -80,8 +89,6 @@ bricks={}
 round = 1
 levels={
 	[1]={
-  		"0000004000000"},
-	[4]={
 		"SSSSSSSSSSSSS",
   		"5555555555555",
   		"8888888888888",
@@ -166,18 +173,22 @@ end
 --------------------------
 
 function gameplay_enter()
-	ball.stuck = true
-	lives = 3
+    ball.stuck = true
+    lives = 3
+    score = 0
+    round = 1
+    bricks = {}
+    create_level(round)
 end
 
 function gameplay_draw()
     draw_background()
     draw_left_margin()
-    draw_game_frame()
     draw_game_area()
     draw_bricks()
-    draw_pad()
+    draw_game_frame()
     draw_ball()
+    draw_pad()
     draw_hud()
     draw_hud_score()
 end
@@ -248,7 +259,7 @@ gameover_state = {
 function _init()
 	init_palette()
 	change_state(gameplay_state)
-	create_level(round)	
+	--create_level(round)	
 end
 
 ------------------------------------------------------------
@@ -256,11 +267,34 @@ end
 ------------------------------------------------------------
 
 function draw_pad()
-	rectfill(pad.x,pad.y,pad.x + pad.width,pad.y + pad.height,7)
+	local EDGE_WIDTH = 7
+	local PAD_HEIGHT = 15
+	--rectfill(pad.x,pad.y,pad.x + pad.width,pad.y + pad.height,7)
+	local pad_sprite = pad.sprite
+	
+	palt(1,true)
+	palt(0,false)
+	-- Left cap
+	sspr(pad_sprite,0,0,EDGE_WIDTH,PAD_HEIGHT,pad.x,pad.y)
+	-- Center
+	for x = EDGE_WIDTH,pad.width-EDGE_WIDTH-1 do
+		sspr(pad_sprite,EDGE_WIDTH,0,1,PAD_HEIGHT,pad.x+x,pad.y)
+	end
+	-- Right cap	
+	sspr(pad_sprite,9,0,EDGE_WIDTH,PAD_HEIGHT,pad.x+pad.width-EDGE_WIDTH,pad.y)
+	palt()	
 end
 
 function draw_ball()
-	circfill(ball.x,ball.y,ball.r,7)
+	--SHADOW
+	palt(1,true)
+	palt(0,false)
+	spr(3,ball.x+2,ball.y+2)	
+	palt()
+
+	--circfill(ball.x,ball.y,ball.r,7)
+	--BALL
+	spr(ball.sprite,ball.x,ball.y)	
 end
 
 function draw_background()
@@ -277,7 +311,7 @@ function draw_left_margin()
     )
 end
 
-function draw_game_frame()
+function draw_game_frame_v2()
 
     -- TOP
     rectfill(
@@ -308,14 +342,122 @@ function draw_game_frame()
 
 end
 
-function draw_game_area()
+function draw_game_frame_v3()
+
+    -- TOP
     rectfill(
-        GAME_X,
-        GAME_Y,
-        GAME_X + GAME_WIDTH - 1,
-        SCREEN_HEIGHT - 1,
-        1
+        FRAME_X,
+        FRAME_Y,
+        FRAME_X + FRAME_WIDTH - 1,
+        GAME_Y - 1,
+        5
     )
+
+    -- LEFT
+    rectfill(
+        FRAME_X,
+        FRAME_Y,
+        FRAME_X + FRAME_SIZE - 1,
+        GAME_BOTTOM,
+        5
+    )
+
+    -- RIGHT
+    rectfill(
+        FRAME_X + FRAME_WIDTH - FRAME_SIZE,
+        FRAME_Y,
+        FRAME_X + FRAME_WIDTH - 1,
+        GAME_BOTTOM,
+        5
+    )
+
+end
+
+function draw_game_frame()
+
+	local TILE_SIZE = 16
+	
+	local left_x  = FRAME_X
+	local right_x = FRAME_X + FRAME_WIDTH - TILE_SIZE
+	local top_y   = FRAME_Y
+	local bottom_y = GAME_BOTTOM - TILE_SIZE + 1
+	
+	palt(1, true)
+	palt(0, false)
+	
+	-- Top left corner
+	spr(24, left_x, top_y)
+	
+	-- Top right corner (mirrored)
+	spr(24, right_x - 1, top_y, true)
+	
+	-- Top border
+	for x = left_x + 8, right_x - 1 do
+		sspr(24, 8, 0, 1, 15, x, top_y)
+	end
+	
+	-- Vertical border
+	for y = top_y + 9, bottom_y do
+		sspr(40, 0, 15, 15, 1, left_x, y)
+		sspr(40, 0, 15, 15, 1, right_x, y, 15, 1, true)
+	end
+	
+	-- Side decorations
+	local section_height = 45
+	local sections = 6
+	
+	for i = 0, sections - 1 do
+	
+	local y = top_y + 7 + i * section_height
+	
+	-- Left
+	sspr(24, 0, 7, 8, 16, left_x, y)
+	sspr(32, 0, 0, 15, 16, left_x, y + 8)
+	sspr(40, 0, 0, 15, 15, left_x, y + 24)
+	
+	-- Right
+	sspr(24, 0, 7, 8, 16, right_x + 7, y, 8, 16, true)
+	sspr(32, 0, 0, 15, 16, right_x, y + 8, 15, 16, true)
+	sspr(40, 0, 0, 15, 15, right_x, y + 24, 15, 15, true)
+	
+	end
+	
+	-- Top clamps
+	local dx = 50
+	local tam = 16
+	spr(25, left_x + dx, top_y)
+	spr(26, left_x + dx + tam, top_y)
+	
+	dx = 165
+	spr(25, left_x + dx, top_y)
+	spr(26, left_x + dx + tam, top_y)
+	
+	palt()	
+end
+
+function draw_game_area()
+   rectfill(
+       GAME_X,
+       GAME_Y,
+       GAME_RIGHT,
+       GAME_BOTTOM,
+       1
+   )
+	local tile_w = 23
+	local tile_h = 16
+	
+	local cols = flr((GAME_WIDTH + tile_w - 1) / tile_w)
+	local rows = flr((GAME_HEIGHT + tile_h - 1) / tile_h)
+	
+	for y = 0, rows - 1 do
+		for x = 0, cols - 1 do
+			spr(
+				192,
+				GAME_X + x * tile_w - 5,
+				GAME_Y + y * tile_h
+			)
+		end
+	end    
 end
 
 function draw_hud()
@@ -562,7 +704,7 @@ end
 
 function update_stuck_ball()
 	-- Keep the ball attached to the paddle
-	ball.x = pad.x + flr(pad.width / 2)
+	ball.x = pad.x + flr(pad.width / 2) - ball.r
 	ball.y = pad.y - ball.r - 2
 	
 	-- Launch on X
@@ -679,7 +821,7 @@ function check_ball_bricks()
 			and ball.y + ball.r >= brick.y
 			and ball.y - ball.r <= brick.y + brick.height then
 			
-			hit_brick(brick)
+			hit_brick_v3(brick)
 			sfx(3)
 			return
 		
@@ -773,8 +915,56 @@ function hit_brick_v2(brick)
 
 end
 
-function create_level(level_index)
 
+function hit_brick_v3(brick)
+    if brick.hits > 0 then
+        brick.hits -= 1
+        if brick.hits == 0 then
+            brick.alive = false
+            score += brick.score
+            remaining_bricks -= 1
+            if remaining_bricks == 0 then
+                next_round()
+            end
+        end
+    end
+
+    local from_left   = ball.old_x + ball.r <= brick.x
+    local from_right  = ball.old_x - ball.r >= brick.x + brick.width
+    local from_top    = ball.old_y + ball.r <= brick.y
+    local from_bottom = ball.old_y - ball.r >= brick.y + brick.height
+
+    if from_left then
+        ball.dx = -ball.dx
+        ball.x = brick.x - ball.r
+    elseif from_right then
+        ball.dx = -ball.dx
+        ball.x = brick.x + brick.width + ball.r
+    elseif from_top then
+        ball.dy = -ball.dy
+        ball.y = brick.y - ball.r
+    elseif from_bottom then
+        ball.dy = -ball.dy
+        ball.y = brick.y + brick.height + ball.r
+    else
+        -- Fallback: bola ya dentro del ladrillo (esquina, alta velocidad)
+        -- Usar el eje con menor solapamiento
+        local ox = min((ball.x + ball.r) - brick.x, (brick.x + brick.width) - (ball.x - ball.r))
+        local oy = min((ball.y + ball.r) - brick.y, (brick.y + brick.height) - (ball.y - ball.r))
+        if ox < oy then
+            ball.dx = -ball.dx
+        else
+            ball.dy = -ball.dy
+        end
+    end
+
+    if brick.type == 9 or brick.type == 10 then
+        brick.flash = BRICK_FLASH
+    end
+end
+
+function create_level(level_index)
+	bricks = {}
 	remaining_bricks = 0
 	local level = levels[level_index]
 
@@ -794,7 +984,7 @@ function create_level(level_index)
 				if data then
 	
 					add(bricks, {
-						x = BRICKS_X + (col - 1) * (BRICK_WIDTH + BRICK_SPACING_X) + 1,
+						x = BRICKS_X + (col - 1) * (BRICK_WIDTH + BRICK_SPACING_X),
 						y = BRICKS_Y + (row - 1) * (BRICK_HEIGHT + BRICK_SPACING_Y),
 						width  = BRICK_WIDTH,
 						height = BRICK_HEIGHT,
