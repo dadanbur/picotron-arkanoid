@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-27 06:55:18",revision=139]]
+--[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-27 08:17:33",revision=159]]
 include "./palette.lua"
 
 SCREEN_WIDTH  = 480
@@ -74,11 +74,14 @@ brick_types = {
     ["G"] = { col = 25,  type = 10, score = 0,   hits = -1 } -- Gold
 }
 
+remaining_bricks = 0
 bricks={}  	
 
-round = 3
+round = 1
 levels={
 	[1]={
+  		"0000004000000"},
+	[4]={
 		"SSSSSSSSSSSSS",
   		"5555555555555",
   		"8888888888888",
@@ -117,15 +120,136 @@ levels={
 		"GGGGGGGGGG111",}		
 	}
 
-function _init()
-	init_palette()
-	create_level(round)
-	
-end
-
 lives = 3
 score = 0
 
+--------------------------
+-- STATE MACHINE
+--------------------------
+
+state_manager = {
+	current = nil
+}
+
+function change_state(new_state)
+
+	if state_manager.current and state_manager.current.leave then
+		state_manager.current.leave()
+	end
+	
+	state_manager.current = new_state
+	
+	if state_manager.current.enter then
+		state_manager.current.enter()
+	end
+end
+
+function update_state()
+	state_manager.current.update()
+end
+
+function draw_state()
+	state_manager.current.draw()
+end
+
+function _update()
+   update_state()
+end
+
+function _draw()
+	draw_state()
+end
+
+
+--------------------------
+-- GAMEPLAY STATE
+--------------------------
+
+function gameplay_enter()
+	ball.stuck = true
+	lives = 3
+end
+
+function gameplay_draw()
+    draw_background()
+    draw_left_margin()
+    draw_game_frame()
+    draw_game_area()
+    draw_bricks()
+    draw_pad()
+    draw_ball()
+    draw_hud()
+    draw_hud_score()
+end
+
+function gameplay_update()
+	local button_pressed=false
+	--left
+	if btn(0) then
+		button_pressed = true
+		pad.dx =- 5
+	end
+	--right
+	if btn(1) then
+		button_pressed = true
+		pad.dx = 5
+	end
+	
+	if not button_pressed then
+		pad.dx = pad.dx/1.5
+	end	
+	
+	pad.x += pad.dx
+	pad.x = mid(GAME_X,pad.x,GAME_X + GAME_WIDTH - pad.width - 1)
+	
+	update_ball()
+	update_bricks()
+end
+
+gameplay_state = {
+    enter = gameplay_enter,
+    update = gameplay_update,
+    draw = gameplay_draw
+}
+
+--------------------------
+-- GAMEOVER STATE
+--------------------------
+
+function gameover_enter()
+end
+
+function gameover_draw()
+	cls(24)
+	local text = "GAME OVER"
+	local x = (SCREEN_WIDTH - #text * 8) / 2
+	local y = GAME_Y + GAME_HEIGHT / 2 + 20
+
+	print(text, x+1, y+1, 1)
+	print(text, x, y, next_text_color())
+end
+
+function gameover_update()
+	if btnp(5) then
+		change_state(gameplay_state)
+	end
+end
+
+gameover_state = {
+    enter = gameover_enter,
+    update = gameover_update,
+    draw = gameover_draw
+}
+
+------------------------------------------------------------
+-- INIT
+------------------------------------------------------------
+
+function _init()
+	init_palette()
+	change_state(gameplay_state)
+	create_level(round)	
+end
 
 ------------------------------------------------------------
 -- DRAW
@@ -421,49 +545,12 @@ function draw_hud_score()
     print("ALL RIGHTS RESERVED", x, SCREEN_HEIGHT - 16, 28)
 end
 
-------------------------------------------------------------
--- MAIN DRAW
-------------------------------------------------------------
 
-function _draw()
-    draw_background()
-    draw_left_margin()
-    draw_game_frame()
-    draw_game_area()
-    draw_bricks()
-    draw_pad()
-    draw_ball()
-    draw_hud()
-    draw_hud_score()
-end
+
 
 ------------------------------------------------------------
 -- UPDATE
 ------------------------------------------------------------
-
-function _update()
-	local button_pressed=false
-	--left
-	if btn(0) then
-		button_pressed = true
-		pad.dx =- 5
-	end
-	--right
-	if btn(1) then
-		button_pressed = true
-		pad.dx = 5
-	end
-	
-	if not button_pressed then
-		pad.dx = pad.dx/1.5
-	end	
-	
-	pad.x += pad.dx
-	pad.x = mid(GAME_X,pad.x,GAME_X + GAME_WIDTH - pad.width - 1)
-	
-	update_ball()
-	update_bricks()
-end
 
 function update_bricks()
 	for brick in all(bricks) do
@@ -476,7 +563,7 @@ end
 function update_stuck_ball()
 	-- Keep the ball attached to the paddle
 	ball.x = pad.x + flr(pad.width / 2)
-	ball.y = pad.y - ball.r
+	ball.y = pad.y - ball.r - 2
 	
 	-- Launch on X
 	if btnp(5) then
@@ -488,6 +575,7 @@ function update_ball()
 
 	if ball.stuck then
 		update_stuck_ball()
+		return
 	end
 
 	ball.old_x = ball.x
@@ -526,7 +614,7 @@ function update_ball()
 		if lives > 0 then
 			reset_ball()
 		else
-			--game_over()
+			change_state(gameover_state)
 		end
 		
 		return
@@ -608,6 +696,10 @@ function hit_brick(brick)
 		if brick.hits == 0 then
 			brick.alive = false
 			score += brick.score
+			remaining_bricks -= 1
+			if remaining_bricks == 0 then
+        		next_round()
+        	end
 		end
 	end
 	
@@ -638,6 +730,10 @@ function hit_brick_v2(brick)
 		if brick.hits == 0 then
 			brick.alive = false
 			score += brick.score
+			remaining_bricks -= 1
+			if remaining_bricks == 0 then
+        		next_round()
+        	end
 		end
 	end
 	
@@ -677,9 +773,10 @@ function hit_brick_v2(brick)
 
 end
 
-function create_level(level)
+function create_level(level_index)
 
-	local level = levels[level]
+	remaining_bricks = 0
+	local level = levels[level_index]
 
 	for row = 1, #level do
 
@@ -708,10 +805,44 @@ function create_level(level)
 						flash = 0,
 						alive = true
 					})
+					
+					-- Count only breakable bricks
+					if data.hits > 0 then
+    					remaining_bricks += 1
+					end
 	
 				end
 			end
 		end
 	end
 	
+end
+
+function next_round()
+    round += 1
+
+    if round > #levels then
+        -- Game completed
+        --change_state(game_completed_state)
+        return
+    end
+
+    create_level(round)
+    reset_ball()
+
+end
+
+local text_anim = {5,5,5,5,5,5,5,5,5,5,5,6,6,7,7,6,6,5}
+
+text_frame = 1
+
+function next_text_color()
+    local c = text_anim[text_frame]
+
+    text_frame += 1
+    if text_frame > #text_anim then
+        text_frame = 1
+    end
+
+    return c
 end
