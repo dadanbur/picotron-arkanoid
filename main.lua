@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-27 10:00:18",revision=219]]
+--[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-27 15:16:39",revision=289]]
 include "./palette.lua"
 
 SCREEN_WIDTH  = 480
@@ -11,10 +11,11 @@ FRAME_SIZE  = 8
 GAME_WIDTH  = 222
 GAME_HEIGHT = 254
 
-GAME_BOTTOM = SCREEN_HEIGHT
+GAME_BOTTOM = SCREEN_HEIGHT - 1
 
 FRAME_WIDTH  = GAME_WIDTH + FRAME_SIZE * 2
 FRAME_HEIGHT = GAME_HEIGHT + FRAME_SIZE
+FRAME_TILE_SIZE = 16
 
 FRAME_X = LEFT_MARGIN
 
@@ -32,6 +33,12 @@ HUD_Y = 0
 HUD_WIDTH = SCREEN_WIDTH - HUD_X
 HUD_HEIGHT = SCREEN_HEIGHT
 
+SPR_FRAME_CORNER   = 24
+SPR_FRAME_DECOR_A  = 32
+SPR_FRAME_DECOR_B  = 40
+SPR_FRAME_CLAMP_L  = 25
+SPR_FRAME_CLAMP_R  = 26
+
 PADDLE_WIDTH  = 32
 PADDLE_HEIGHT = 8
 PADDLE_BOTTOM_MARGIN = 18
@@ -46,10 +53,12 @@ BRICKS_X = FRAME_X + FRAME_SIZE
 BRICKS_Y = FRAME_Y + FRAME_SIZE + (BRICK_HEIGHT*3) 
 
 pad = {
-	x = GAME_X + (GAME_WIDTH - 32) / 2,
+	x = GAME_X + (GAME_WIDTH - PADDLE_WIDTH) / 2,
 	y = SCREEN_HEIGHT - (PADDLE_HEIGHT + PADDLE_BOTTOM_MARGIN),
 	width = PADDLE_WIDTH,
 	height = PADDLE_HEIGHT,
+	speed = 5,
+	friction=1.5,
 	sprite = 8,
 	dx = 0
 }
@@ -57,7 +66,7 @@ pad = {
 local d = 1 / sqrt(2)
 
 ball = {
-	x = GAME_X + (GAME_WIDTH - 32) / 2,
+	x = GAME_X + (GAME_WIDTH - PADDLE_WIDTH) / 2,
 	y = SCREEN_HEIGHT - (PADDLE_HEIGHT + PADDLE_BOTTOM_MARGIN),
 	old_x = 0,
 	old_y = 0,
@@ -69,22 +78,136 @@ ball = {
 	stuck = true
 }
 
+BRICK_EMPTY		= "0"
+BRICK_WHITE		= "1"
+BRICK_ORANGE		= "2"
+BRICK_CYAN		= "3"
+BRICK_GREEN		= "4"
+BRICK_RED			= "5"
+BRICK_BLUE		= "6"
+BRICK_VIOLET		= "7"
+BRICK_YELLOW	= "8"
+BRICK_SILVER		= "S"
+BRICK_GOLD		= "G"
 
 brick_types = {
-    ["1"] = { col = 7,  type = 1,  score = 50,  hits = 1 }, -- White
-    ["2"] = { col = 9,  type = 2,  score = 60,  hits = 1 }, -- Orange
-    ["3"] = { col = 28, type = 3,  score = 70,  hits = 1 }, -- Cyan
-    ["4"] = { col = 11, type = 4,  score = 90,  hits = 1 }, -- Green
-    ["5"] = { col = 8,  type = 5,  score = 100, hits = 1 }, -- Red
-    ["6"] = { col = 16, type = 6,  score = 100, hits = 1 }, -- Blue
-    ["7"] = { col = 30, type = 7,  score = 100, hits = 1 }, -- Violet
-    ["8"] = { col = 10, type = 8,  score = 50,  hits = 1 }, -- Yellow
-    ["S"] = { col = 6,  type = 9,  score = 50,  hits = 2 }, -- Silver
-    ["G"] = { col = 25,  type = 10, score = 0,   hits = -1 } -- Gold
+    [BRICK_WHITE]		= { col = 7,  type = 1,  score = 50,  hits = 1 }, -- White
+    [BRICK_ORANGE]		= { col = 9,  type = 2,  score = 60,  hits = 1 }, -- Orange
+    [BRICK_CYAN] 		= { col = 28, type = 3,  score = 70,  hits = 1 }, -- Cyan
+    [BRICK_GREEN] 		= { col = 11, type = 4,  score = 90,  hits = 1 }, -- Green
+    [BRICK_RED] 		= { col = 8,  type = 5,  score = 100, hits = 1 }, -- Red
+    [BRICK_BLUE] 		= { col = 16, type = 6,  score = 100, hits = 1 }, -- Blue
+    [BRICK_VIOLET] 	= { col = 30, type = 7,  score = 100, hits = 1 }, -- Violet
+    [BRICK_YELLOW] 	= { col = 10, type = 8,  score = 50,  hits = 1 }, -- Yellow
+    [BRICK_SILVER] 	= { col = 6,  type = 9,  score = 50,  hits = 2 }, -- Silver
+    [BRICK_GOLD] 		= { col = 25,  type = 10, score = 0,   hits = -1 } -- Gold
 }
 
 remaining_bricks = 0
 bricks={}  	
+
+SPR_PILL_SHADOW = 48
+POWERUP_DROP_CHANCE = 1
+
+POWERUP_NONE			= 0
+POWERUP_SLOW			= 1
+POWERUP_PLAYER			= 2
+POWERUP_CATCH			= 3
+POWERUP_ENLARGE		= 4
+POWERUP_MEGA			= 5
+POWERUP_DISRUPTION	= 6
+POWERUP_LASER			= 7
+POWERUP_BREAK			= 8
+--POWERUP_REDUCE			= 5
+
+powerup_types = {
+    [POWERUP_SLOW] = { 
+        type = POWERUP_SLOW,
+        name = "SLOW",
+        text = "SPEED DOWN",
+        label = "S",
+        color = 9,
+        sprites = {64,65,66,67,68,69,70,71}
+    },
+
+    [POWERUP_PLAYER] = {
+        type = POWERUP_PLAYER,
+        name = "PLAYER",
+        text = "PLAYER",
+        label = "P",
+        color = 13,
+        sprites = {112,113,114,115,116,117,118,119}
+    },
+
+    [POWERUP_CATCH] = {
+        type = POWERUP_CATCH,
+        name = "CATCH",
+        text = "CATCH",
+        label = "C",
+        color = 11,
+        sprites = {72,73,74,75,76,77,78,79}
+    },
+
+    [POWERUP_ENLARGE] = {
+        type = POWERUP_ENLARGE,
+        name = "ENLARGE",
+        text = "ENLARGE",
+        label = "E",
+        color = 12,
+        sprites = {88,89,90,91,92,93,94,95}
+    },
+    
+    [POWERUP_MEGA] = {
+        type = POWERUP_MEGA,
+        name = "MEGA",
+        text = "MEGA BALL",
+        label = "M",
+        color = 2,
+        sprites = {120,121,122,123,124,125,126,127}
+    },
+
+    [POWERUP_DISRUPTION] = {
+        type = POWERUP_DISRUPTION,
+        name = "DISRUPTION",
+        text = "DISRUPTION",
+        label = "D",
+        color = 28,
+        sprites = {96,97,98,99,100,101,102,103}
+    },
+
+    [POWERUP_LASER] = {
+        type = POWERUP_LASER,
+        name = "LASER",
+        text = "LASER",
+        label = "L",
+        color = 8,
+        sprites = {80,81,82,83,84,85,86,87}
+    },
+
+    [POWERUP_BREAK] = {
+        type = POWERUP_BREAK,
+        name = "BREAK",
+        text = "BREAK",
+        label = "B",
+        color = 30,
+        sprites = {104,105,106,107,108,109,110,111}
+    }
+    
+    --[[
+    [POWERUP_REDUCE] = {
+        type = POWERUP_REDUCE,
+        name = "REDUCE",
+        text = "REDUCE",
+        label = "R",
+        color = 5,
+        sprites = nil
+    },  
+    ]]  
+    
+}
+
+pills={}
+active_powerups = {}
 
 round = 1
 levels={
@@ -173,12 +296,7 @@ end
 --------------------------
 
 function gameplay_enter()
-    ball.stuck = true
-    lives = 3
-    score = 0
-    round = 1
-    bricks = {}
-    create_level(round)
+
 end
 
 function gameplay_draw()
@@ -186,9 +304,10 @@ function gameplay_draw()
     draw_left_margin()
     draw_game_area()
     draw_bricks()
-    draw_game_frame()
     draw_ball()
     draw_pad()
+    draw_pills()
+    draw_game_frame()
     draw_hud()
     draw_hud_score()
 end
@@ -198,16 +317,16 @@ function gameplay_update()
 	--left
 	if btn(0) then
 		button_pressed = true
-		pad.dx =- 5
+		pad.dx =- pad.speed
 	end
 	--right
 	if btn(1) then
 		button_pressed = true
-		pad.dx = 5
+		pad.dx = pad.speed
 	end
 	
 	if not button_pressed then
-		pad.dx = pad.dx/1.5
+		pad.dx = pad.dx/pad.friction
 	end	
 	
 	pad.x += pad.dx
@@ -215,6 +334,8 @@ function gameplay_update()
 	
 	update_ball()
 	update_bricks()
+	update_pills()
+	update_powerups()
 end
 
 gameplay_state = {
@@ -246,19 +367,71 @@ function gameover_update()
 	end
 end
 
+function gameover_leave()
+	start_game()
+end
+
 gameover_state = {
     enter = gameover_enter,
     update = gameover_update,
-    draw = gameover_draw
+    draw = gameover_draw,
+    leave = gameover_leave
 }
+
+--------------------------
+-- ROUND STATE
+--------------------------
+local round_timer = 0
+
+function round_enter()
+    ball.stuck = true
+
+    bricks = {}
+    create_level(round)
+	round_timer = 120
+end
+
+function round_draw()
+	gameplay_draw()
+	local text = "ROUND "..round
+	local x = GAME_X + (GAME_WIDTH - #text * 8) / 2
+	local y = GAME_Y + GAME_HEIGHT / 2 + 20
+
+	print(text, x+1, y+1, 1)
+	print(text, x, y, 7)
+end
+
+function round_update()
+	gameplay_update()
+	
+	round_timer -= 1
+	if round_timer <= 0 then
+		change_state(gameplay_state)
+	end
+end
+
+round_state = {
+    enter = round_enter,
+    update = round_update,
+    draw = round_draw
+}
+
 
 ------------------------------------------------------------
 -- INIT
 ------------------------------------------------------------
 
+function start_game()
+    lives = 3
+    score = 0
+    round = 1
+    ball.stuck = true
+end
+
 function _init()
 	init_palette()
-	change_state(gameplay_state)
+	start_game()
+	change_state(round_state)
 	--create_level(round)	
 end
 
@@ -267,9 +440,11 @@ end
 ------------------------------------------------------------
 
 function draw_pad()
+	draw_pad_shadow()
+
 	local EDGE_WIDTH = 7
 	local PAD_HEIGHT = 15
-	--rectfill(pad.x,pad.y,pad.x + pad.width,pad.y + pad.height,7)
+	rectfill(pad.x+EDGE_WIDTH-1,pad.y,pad.x+pad.width-4,pad.y+pad.height-1,0)
 	local pad_sprite = pad.sprite
 	
 	palt(1,true)
@@ -277,12 +452,58 @@ function draw_pad()
 	-- Left cap
 	sspr(pad_sprite,0,0,EDGE_WIDTH,PAD_HEIGHT,pad.x,pad.y)
 	-- Center
-	for x = EDGE_WIDTH,pad.width-EDGE_WIDTH-1 do
+	for x = EDGE_WIDTH+1,pad.width-EDGE_WIDTH-2 do
 		sspr(pad_sprite,EDGE_WIDTH,0,1,PAD_HEIGHT,pad.x+x,pad.y)
 	end
 	-- Right cap	
 	sspr(pad_sprite,9,0,EDGE_WIDTH,PAD_HEIGHT,pad.x+pad.width-EDGE_WIDTH,pad.y)
 	palt()	
+end
+
+function draw_pad_shadow_old()
+	local _x=pad.x+4
+	local _y=pad.y+4
+	rectfill(_x+6,_y+2,_x+pad.width-2,_y+pad.height-2,0)
+	palt(1,true)
+	palt(0,false)
+	sspr(11,0,0,7,15,_x,_y)
+	for i=8,pad.width-6 do
+		sspr(11,7,0,1,15,_x+i,_y)
+	end
+	sspr(11,9,0,7,15,_x+pad.width-4,_y)
+	palt()	
+end
+
+function draw_pad_shadow()
+
+	local SHADOW_OFFSET_X = 4
+	local SHADOW_OFFSET_Y = 4
+	
+	local EDGE_WIDTH = 7
+	local SPRITE_HEIGHT = 15
+	
+	local shadow_x = pad.x + SHADOW_OFFSET_X
+	local shadow_y = pad.y + SHADOW_OFFSET_Y
+	
+	-- Shadow body
+	rectfill(shadow_x + 6, shadow_y + 2, shadow_x + pad.width - 2, shadow_y + pad.height - 2, 0)
+	
+	palt(1, true)
+	palt(0, false)
+	
+	-- Left cap
+	sspr(11, 0, 0, EDGE_WIDTH, SPRITE_HEIGHT, shadow_x, shadow_y)
+	
+	-- Center
+	for x = EDGE_WIDTH + 1, pad.width - EDGE_WIDTH + 1 do
+	    sspr(11, EDGE_WIDTH, 0, 1, SPRITE_HEIGHT, shadow_x + x, shadow_y)
+	end
+	
+	-- Right cap
+	sspr(11, 9, 0, EDGE_WIDTH, SPRITE_HEIGHT, shadow_x + pad.width - 4, shadow_y)
+	
+	palt()
+
 end
 
 function draw_ball()
@@ -374,32 +595,29 @@ function draw_game_frame_v3()
 end
 
 function draw_game_frame()
-
-	local TILE_SIZE = 16
-	
 	local left_x  = FRAME_X
-	local right_x = FRAME_X + FRAME_WIDTH - TILE_SIZE
+	local right_x = FRAME_X + FRAME_WIDTH - FRAME_TILE_SIZE
 	local top_y   = FRAME_Y
-	local bottom_y = GAME_BOTTOM - TILE_SIZE + 1
+	local bottom_y = GAME_BOTTOM - FRAME_TILE_SIZE + 1
 	
 	palt(1, true)
 	palt(0, false)
 	
 	-- Top left corner
-	spr(24, left_x, top_y)
+	spr(SPR_FRAME_CORNER, left_x, top_y)
 	
 	-- Top right corner (mirrored)
-	spr(24, right_x - 1, top_y, true)
+	spr(SPR_FRAME_CORNER, right_x - 1, top_y, true)
 	
 	-- Top border
 	for x = left_x + 8, right_x - 1 do
-		sspr(24, 8, 0, 1, 15, x, top_y)
+		sspr(SPR_FRAME_CORNER, 8, 0, 1, 15, x, top_y)
 	end
 	
 	-- Vertical border
 	for y = top_y + 9, bottom_y do
-		sspr(40, 0, 15, 15, 1, left_x, y)
-		sspr(40, 0, 15, 15, 1, right_x, y, 15, 1, true)
+		sspr(SPR_FRAME_DECOR_B, 0, 15, 15, 1, left_x, y)
+		sspr(SPR_FRAME_DECOR_B, 0, 15, 15, 1, right_x, y, 15, 1, true)
 	end
 	
 	-- Side decorations
@@ -408,29 +626,28 @@ function draw_game_frame()
 	
 	for i = 0, sections - 1 do
 	
-	local y = top_y + 7 + i * section_height
-	
-	-- Left
-	sspr(24, 0, 7, 8, 16, left_x, y)
-	sspr(32, 0, 0, 15, 16, left_x, y + 8)
-	sspr(40, 0, 0, 15, 15, left_x, y + 24)
-	
-	-- Right
-	sspr(24, 0, 7, 8, 16, right_x + 7, y, 8, 16, true)
-	sspr(32, 0, 0, 15, 16, right_x, y + 8, 15, 16, true)
-	sspr(40, 0, 0, 15, 15, right_x, y + 24, 15, 15, true)
+		local y = top_y + 7 + i * section_height
+		
+		-- Left
+		sspr(SPR_FRAME_CORNER, 0, 7, 8, 16, left_x, y)
+		sspr(SPR_FRAME_DECOR_A, 0, 0, 15, 16, left_x, y + 8)
+		sspr(SPR_FRAME_DECOR_B, 0, 0, 15, 15, left_x, y + 24)
+		
+		-- Right
+		sspr(SPR_FRAME_CORNER, 0, 7, 8, 16, right_x + 7, y, 8, 16, true)
+		sspr(SPR_FRAME_DECOR_A, 0, 0, 15, 16, right_x, y + 8, 15, 16, true)
+		sspr(SPR_FRAME_DECOR_B, 0, 0, 15, 15, right_x, y + 24, 15, 15, true)
 	
 	end
 	
 	-- Top clamps
 	local dx = 50
-	local tam = 16
-	spr(25, left_x + dx, top_y)
-	spr(26, left_x + dx + tam, top_y)
+	spr(SPR_FRAME_CLAMP_L, left_x + dx, top_y)
+	spr(SPR_FRAME_CLAMP_R, left_x + dx + FRAME_TILE_SIZE, top_y)
 	
 	dx = 165
-	spr(25, left_x + dx, top_y)
-	spr(26, left_x + dx + tam, top_y)
+	spr(SPR_FRAME_CLAMP_L, left_x + dx, top_y)
+	spr(SPR_FRAME_CLAMP_R, left_x + dx + FRAME_TILE_SIZE, top_y)
 	
 	palt()	
 end
@@ -453,11 +670,12 @@ function draw_game_area()
 		for x = 0, cols - 1 do
 			spr(
 				192,
-				GAME_X + x * tile_w - 5,
+				GAME_X + x * tile_w - 8,
 				GAME_Y + y * tile_h
 			)
 		end
 	end    
+    
 end
 
 function draw_hud()
@@ -685,6 +903,8 @@ function draw_hud_score()
 
     print("(C) 2026 DADANBUR", x, SCREEN_HEIGHT - 26, 28)
     print("ALL RIGHTS RESERVED", x, SCREEN_HEIGHT - 16, 28)
+    
+    draw_active_powerups()
 end
 
 
@@ -842,6 +1062,7 @@ function hit_brick(brick)
 			if remaining_bricks == 0 then
         		next_round()
         	end
+        	spawn_pill(brick.x,brick.y,POWERUP_SLOW)
 		end
 	end
 	
@@ -876,6 +1097,7 @@ function hit_brick_v2(brick)
 			if remaining_bricks == 0 then
         		next_round()
         	end
+        	spawn_pill(brick.x,brick.y,POWERUP_SLOW)
 		end
 	end
 	
@@ -916,6 +1138,13 @@ function hit_brick_v2(brick)
 end
 
 
+function spawn_random_pill(x,y)
+	if rnd() < POWERUP_DROP_CHANCE then
+		local powerup = flr(rnd(#powerup_types)) + 1
+		spawn_pill(x,y,powerup)
+	end
+end
+
 function hit_brick_v3(brick)
     if brick.hits > 0 then
         brick.hits -= 1
@@ -926,6 +1155,7 @@ function hit_brick_v3(brick)
             if remaining_bricks == 0 then
                 next_round()
             end
+            spawn_random_pill(brick.x,brick.y)
         end
     end
 
@@ -976,8 +1206,8 @@ function create_level(level_index)
 
 			local elem = sub(level_line, col, col)
 	
-			-- Empty space
-			if elem ~= " " then
+			-- Empty brick
+			if elem ~= BRICK_EMPTY then
 	
 				local data = brick_types[elem]
 	
@@ -1035,4 +1265,137 @@ function next_text_color()
     end
 
     return c
+end
+
+
+
+function spawn_pill(x, y, powerup_type)
+
+    local data = powerup_types[powerup_type]
+    if not data then
+        return
+    end
+
+    local pill = {
+        x = x,
+        y = y,
+        width = 4,
+        height = 4,
+        type = powerup_type,
+
+        frame = 1,
+        timer = 0,
+
+        sprites = data.sprites,
+        name = data.name,
+        text = data.text,
+        label = data.label,
+        col = data.color
+    }
+
+    add(pills, pill)
+
+end
+
+
+function update_pills()
+	--MOVE PILLS
+	for pill in all(pills) do
+		update_pill(pill)
+	end
+end
+
+function update_pill(pill)
+   pill.timer += 1
+   if pill.timer > 10 then
+   		pill.timer = 0
+   		pill.frame += 1
+   		if pill.frame > 8 then pill.frame=1 end
+   end
+	pill.y+=0.75
+	if pill.y > GAME_BOTTOM  then 
+		del(pills,pill)
+		return 
+	end
+	--check collision pill and pad
+	if check_collision(pill,pad) then
+		del(pills,pill)
+		sfx(5)
+		--spawn_puft_pill(pill.x,pill.y,pill)
+		activate_powerup(pill.type,10*60)
+		return  
+	end
+end
+
+function check_collision(a, b)
+	if a.x > b.x + b.width  then return false end
+	if a.x + a.width < b.x  then return false end
+	if a.y > b.y + b.height then return false end
+	if a.y + a.height < b.y then return false end
+	
+	return true
+end
+
+
+function draw_pill(pill)
+	if pill.type == POWERUP_NONE then return end
+
+	spr(SPR_PILL_SHADOW,pill.x+2,pill.y+2)
+	spr(pill.sprites[pill.frame],pill.x,pill.y)
+
+end
+
+function draw_pills()
+	palt(1,true)
+	palt(0,false)
+	for pill in all(pills) do
+		draw_pill(pill)
+	end
+	palt()
+end
+
+function activate_powerup(kind, duration)
+    active_powerups[kind] = duration
+end
+
+function deactivate_powerup(kind, duration)
+    active_powerups[kind] = nil
+end
+
+function draw_active_powerups()
+
+	local x = HUD_X + 8
+	local y = HUD_Y + 160
+	
+	for powerup,time in pairs(active_powerups) do
+	
+		local p = powerup_types[powerup]
+		local blink = time <= 5 * 60 and flr(time / 10) % 2 == 0
+		
+		if not blink then
+			palt(1,true)
+			palt(0,false)		
+			spr(p.sprites[1], x, y)
+			palt()
+			print(p.name.." ("..flr(time/60)..")", x + 20, y + 2, p.color)
+		end
+		
+		y += 12
+	
+	end
+
+end
+
+
+function update_powerups()
+	for powerup,time in pairs(active_powerups) do		
+		time -= 1
+		
+		if time <= 0 then
+			deactivate_powerup(powerup)
+		else
+			active_powerups[powerup] = time
+		end
+	
+	end
 end
