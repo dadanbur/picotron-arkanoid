@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-27 15:16:39",revision=289]]
+--[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-27 18:08:45",revision=313]]
 include "./palette.lua"
 
 SCREEN_WIDTH  = 480
@@ -63,6 +63,9 @@ pad = {
 	dx = 0
 }
 
+BALL_SPEED_NORMAL = 2.5
+BALL_SPEED_SLOW   = 1.5
+
 local d = 1 / sqrt(2)
 
 ball = {
@@ -74,7 +77,7 @@ ball = {
 	dx = d,
 	dy = -d,
 	sprite = 1,
-	speed = 2.5,
+	speed = BALL_SPEED_NORMAL,
 	stuck = true
 }
 
@@ -686,6 +689,8 @@ function draw_hud()
         SCREEN_HEIGHT - 1,
         0
     )
+    
+    
 end
 
 function draw_bricks()
@@ -981,7 +986,7 @@ function update_ball()
 		
 		return
 	end	
-	
+		
 	check_ball_paddle()
 	check_ball_bricks()
 end
@@ -1000,6 +1005,7 @@ function check_ball_paddle()
 	if ball.dy <= 0 then
 	    return
 	end
+
 	
 	-- Check collision with the paddle
 	if ball.x + ball.r >= pad.x
@@ -1009,6 +1015,12 @@ function check_ball_paddle()
 	
 		-- Place the ball above the paddle
 		ball.y = pad.y - ball.r
+		
+		if has_powerup(POWERUP_CATCH) then
+		   ball.stuck = true
+			ball.x = ball.x - pad.x
+			return
+		end		
 		
 		-- Calculate the impact position (0 = left, 1 = right)
 		local hit = (ball.x - pad.x) / pad.width
@@ -1141,7 +1153,8 @@ end
 function spawn_random_pill(x,y)
 	if rnd() < POWERUP_DROP_CHANCE then
 		local powerup = flr(rnd(#powerup_types)) + 1
-		spawn_pill(x,y,powerup)
+		spawn_pill(x,y,POWERUP_CATCH)
+		--spawn_pill(x,y,powerup)
 	end
 end
 
@@ -1356,10 +1369,24 @@ end
 
 function activate_powerup(kind, duration)
     active_powerups[kind] = duration
+    if kind == POWERUP_SLOW then
+        --set_ball_speed(BALL_SPEED_SLOW)
+        ball.speed = BALL_SPEED_SLOW
+        return
+    end    
 end
 
 function deactivate_powerup(kind, duration)
     active_powerups[kind] = nil
+    if kind == POWERUP_SLOW then
+        --set_ball_speed(BALL_SPEED_NORMAL)
+        ball.speed = BALL_SPEED_NORMAL
+        return
+    end     
+end
+
+function has_powerup(powerup)
+    return active_powerups[powerup] ~= nil
 end
 
 function draw_active_powerups()
