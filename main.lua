@@ -1,12 +1,14 @@
---[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-26 22:24:52",revision=90]]
+--[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-27 06:55:18",revision=139]]
+include "./palette.lua"
+
 SCREEN_WIDTH  = 480
 SCREEN_HEIGHT = 270
 
-TOP_MARGIN  = 16
+TOP_MARGIN  = 8
 LEFT_MARGIN = 25
-FRAME_SIZE  = 6
+FRAME_SIZE  = 8
 
-GAME_WIDTH  = 220
+GAME_WIDTH  = 222
 GAME_HEIGHT = 208
 
 FRAME_WIDTH  = GAME_WIDTH + FRAME_SIZE * 2
@@ -31,6 +33,7 @@ BRICK_WIDTH  = 16
 BRICK_HEIGHT = 8
 BRICK_SPACING_X = 1
 BRICK_SPACING_Y = 1
+BRICK_FLASH = 18
 
 BRICKS_X = FRAME_X + FRAME_SIZE
 BRICKS_Y = FRAME_Y + FRAME_SIZE + (BRICK_HEIGHT*3) 
@@ -68,11 +71,12 @@ brick_types = {
     ["7"] = { col = 30, type = 7,  score = 100, hits = 1 }, -- Violet
     ["8"] = { col = 10, type = 8,  score = 50,  hits = 1 }, -- Yellow
     ["S"] = { col = 6,  type = 9,  score = 50,  hits = 2 }, -- Silver
-    ["G"] = { col = 9,  type = 10, score = 0,   hits = -1 } -- Gold
+    ["G"] = { col = 25,  type = 10, score = 0,   hits = -1 } -- Gold
 }
 
 bricks={}  	
- 
+
+round = 3
 levels={
 	[1]={
 		"SSSSSSSSSSSSS",
@@ -80,17 +84,48 @@ levels={
   		"8888888888888",
   		"6666666666666",
   		"7777777777777",
-  		"4444444444444"}	  		
-  		}
+  		"4444444444444"},
+  	[2]={
+		"1000000000000",
+		"1200000000000",
+		"1230000000000",
+		"1234000000000",
+		"1234500000000",
+		"1234560000000",
+		"1234567000000",
+		"1234567800000",
+		"1234567810000",
+		"1234567812000",
+		"1234567812300",
+		"1234567812340",
+		"SSSSSSSSSSSS5"},
+	[3]={
+		"4444444444444",
+		"0000000000000",
+		"111GGGGGGGGGG",
+		"0000000000000",
+		"5555555555555",
+		"0000000000000",
+		"GGGGGGGGGG111",
+		"0000000000000",
+		"7777777777777",
+		"0000000000000",
+		"666GGGGGGGGGG",
+		"0000000000000",
+		"3333333333333",
+		"0000000000000",
+		"GGGGGGGGGG111",}		
+	}
 
 function _init()
-	create_level(1)
+	init_palette()
+	create_level(round)
 	
 end
 
 lives = 3
 score = 0
-round = 1
+
 
 ------------------------------------------------------------
 -- DRAW
@@ -173,16 +208,199 @@ function draw_bricks()
 
 	for brick in all(bricks) do
 		if brick.alive then
+	
+		
+			-- Brick body
 			rectfill(
 				brick.x,
 				brick.y,
-				brick.x + brick.width - 1,
-				brick.y + brick.height - 1,
+				brick.x + brick.width,
+				brick.y + brick.height,
 				brick.col
 			)
+
+			if brick.flash > 0 then
+    			draw_brick_flash(brick)
+			end	
+			
+			--[[
+			-- Black outline
+				rect(
+				brick.x-1,
+				brick.y-1,
+				brick.x + brick.width,
+				brick.y + brick.height,
+				0
+			]]
+			
+			-- Bottom outline
+			line(
+				brick.x,
+				brick.y + brick.height,
+				brick.x + brick.width,
+				brick.y + brick.height,
+				0
+			)
+			
+			-- Right outline
+			line(
+				brick.x + brick.width,
+				brick.y,
+				brick.x + brick.width,
+				brick.y + brick.height,
+				0
+			)			
+							
+			-- Silver highlights
+			if brick.type == 9 then
+				draw_silver_brick(brick)
+			end
+			-- Golden highlights
+			if brick.type == 10 then
+				draw_gold_brick(brick)
+			end
+			
+		
+			
 		end
 	end
 
+end
+
+
+function draw_brick_flash(brick)
+
+    local phase = 3 - flr(brick.flash / (BRICK_FLASH / 3))
+    local t = (BRICK_FLASH - brick.flash) % (BRICK_FLASH / 3)
+    t /= (BRICK_FLASH / 3)
+
+    if phase == 0 then
+
+        local x = brick.x + brick.width * t
+        local y = brick.y + brick.height * t
+
+        line(x,
+             brick.y + brick.height,
+             brick.x + brick.width,
+             brick.y + brick.height,
+             7)
+
+        line(brick.x + brick.width,
+             y,
+             brick.x + brick.width,
+             brick.y + brick.height,
+             7)
+
+    elseif phase == 1 then
+
+        rectfill(
+            brick.x,
+            brick.y,
+            brick.x + brick.width,
+            brick.y + brick.height,
+            7
+        )
+
+    else
+
+        local x = brick.x + brick.width * (1 - t)
+        local y = brick.y + brick.height * (1 - t)
+
+        line(
+            brick.x,
+            brick.y,
+            x,
+            brick.y,
+            7
+        )
+
+        line(
+            brick.x,
+            brick.y,
+            brick.x,
+            y,
+            7
+        )
+
+    end
+
+end
+
+
+function draw_silver_brick(brick)
+	-- Top highlight
+	line(
+		brick.x,
+		brick.y,
+		brick.x + brick.width - 1,
+		brick.y,
+		7
+	)
+
+	-- Left highlight
+	line(
+		brick.x,
+		brick.y,
+		brick.x,
+		brick.y + brick.height - 1,
+		7
+	)
+	
+	-- Bottom shadow
+	line(
+		brick.x,
+		brick.y + brick.height - 1,
+		brick.x + brick.width - 1,
+		brick.y + brick.height - 1,
+		22
+	)
+	
+	-- Right shadow
+	line(
+		brick.x + brick.width - 1,
+		brick.y,
+		brick.x + brick.width - 1,
+		brick.y + brick.height - 1,
+		22
+	)
+end
+
+function draw_gold_brick(brick)
+	-- Top highlight
+	line(
+		brick.x,
+		brick.y,
+		brick.x + brick.width - 1,
+		brick.y,
+		10
+	)
+
+	-- Left highlight
+	line(
+		brick.x,
+		brick.y,
+		brick.x,
+		brick.y + brick.height - 1,
+		10
+	)
+	
+	-- Bottom shadow
+	line(
+		brick.x,
+		brick.y + brick.height - 1,
+		brick.x + brick.width - 1,
+		brick.y + brick.height - 1,
+		4
+	)
+	
+	-- Right shadow
+	line(
+		brick.x + brick.width - 1,
+		brick.y,
+		brick.x + brick.width - 1,
+		brick.y + brick.height - 1,
+		4
+	)
 end
 
 function draw_hud_score()
@@ -244,6 +462,15 @@ function _update()
 	pad.x = mid(GAME_X,pad.x,GAME_X + GAME_WIDTH - pad.width - 1)
 	
 	update_ball()
+	update_bricks()
+end
+
+function update_bricks()
+	for brick in all(bricks) do
+		if brick.flash > 0 then
+			brick.flash -= 1
+		end
+	end
 end
 
 function update_stuck_ball()
@@ -273,24 +500,49 @@ function update_ball()
 	if ball.x - ball.r <= GAME_X then
 		ball.x = GAME_X + ball.r
 		ball.dx = -ball.dx
+		sfx(0)
 	end
 	
 	-- RIGHT
 	if ball.x + ball.r >= GAME_X + GAME_WIDTH - 1 then
 		ball.x = GAME_X + GAME_WIDTH - 1 - ball.r
 		ball.dx = -ball.dx
+		sfx(0)
 	end
 	
 	-- TOP
 	if ball.y - ball.r <= GAME_Y then
 		ball.y = GAME_Y + ball.r
 		ball.dy = -ball.dy
+		sfx(0)
+	end	
+	
+	-- BOTTOM. Ball falls below the bottom of the playfield
+	if ball.y - ball.r > SCREEN_HEIGHT then
+		sfx(2)
+		
+		lives -= 1
+		
+		if lives > 0 then
+			reset_ball()
+		else
+			--game_over()
+		end
+		
+		return
 	end	
 	
 	check_ball_paddle()
 	check_ball_bricks()
 end
 
+function reset_ball()
+	ball.stuck = true
+
+	ball.x = pad.x + flr(pad.width / 2)
+	ball.y = pad.y - ball.r
+
+end
 
 function check_ball_paddle()
 
@@ -323,6 +575,8 @@ function check_ball_paddle()
 		
 		ball.dx /= len
 		ball.dy /= len
+		
+		sfx(1)
 	end
 
 end
@@ -338,6 +592,7 @@ function check_ball_bricks()
 			and ball.y - ball.r <= brick.y + brick.height then
 			
 			hit_brick(brick)
+			sfx(3)
 			return
 		
 		end
@@ -366,6 +621,10 @@ function hit_brick(brick)
 	else
 		ball.dy = -ball.dy
 	end
+	
+	if brick.type == 9 or brick.type == 10 then
+		brick.flash = BRICK_FLASH
+	end 
 
 end
 
@@ -438,17 +697,15 @@ function create_level(level)
 				if data then
 	
 					add(bricks, {
-						x = BRICKS_X + (col - 1) * (BRICK_WIDTH + BRICK_SPACING_X),
+						x = BRICKS_X + (col - 1) * (BRICK_WIDTH + BRICK_SPACING_X) + 1,
 						y = BRICKS_Y + (row - 1) * (BRICK_HEIGHT + BRICK_SPACING_Y),
-	
 						width  = BRICK_WIDTH,
 						height = BRICK_HEIGHT,
-	
 						col   = data.col,
 						type  = data.type,
 						score = data.score,
 						hits  = data.hits,
-	
+						flash = 0,
 						alive = true
 					})
 	
