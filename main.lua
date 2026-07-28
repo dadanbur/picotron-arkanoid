@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-27 18:08:45",revision=313]]
+--[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-28 09:28:21",revision=385]]
 include "./palette.lua"
 
 SCREEN_WIDTH  = 480
@@ -40,8 +40,11 @@ SPR_FRAME_CLAMP_L  = 25
 SPR_FRAME_CLAMP_R  = 26
 
 PADDLE_WIDTH  = 32
+PADDLE_WIDTH_LARGE = 48
 PADDLE_HEIGHT = 8
 PADDLE_BOTTOM_MARGIN = 18
+PADDLE_SPRITE = 8
+PADDLE_SPRITE_LASER = 16
 
 BRICK_WIDTH  = 16
 BRICK_HEIGHT = 8
@@ -59,12 +62,15 @@ pad = {
 	height = PADDLE_HEIGHT,
 	speed = 5,
 	friction=1.5,
-	sprite = 8,
-	dx = 0
+	sprite = PADDLE_SPRITE,
+	dx = 0,
+	laser = false
 }
 
 BALL_SPEED_NORMAL = 2.5
 BALL_SPEED_SLOW   = 1.5
+BALL_SPRITE = 1
+BALL_SPRITE_MEGA = 2
 
 local d = 1 / sqrt(2)
 
@@ -76,9 +82,10 @@ ball = {
 	r = 3,
 	dx = d,
 	dy = -d,
-	sprite = 1,
+	sprite = BALL_SPRITE,
 	speed = BALL_SPEED_NORMAL,
-	stuck = true
+	stuck = true,
+	mega = false
 }
 
 BRICK_EMPTY		= "0"
@@ -209,6 +216,7 @@ powerup_types = {
     
 }
 
+laser_shots={}
 pills={}
 active_powerups = {}
 
@@ -309,6 +317,7 @@ function gameplay_draw()
     draw_bricks()
     draw_ball()
     draw_pad()
+    draw_bullets()
     draw_pills()
     draw_game_frame()
     draw_hud()
@@ -321,13 +330,19 @@ function gameplay_update()
 	if btn(0) then
 		button_pressed = true
 		pad.dx =- pad.speed
+		if ball.stuck then ball.dx=-d end	
 	end
 	--right
 	if btn(1) then
 		button_pressed = true
 		pad.dx = pad.speed
+		if ball.stuck then ball.dx=d end
 	end
-	
+	--- Fire laser
+	if pad.laser and btnp(5) then
+		fire_lasers()
+	end
+		
 	if not button_pressed then
 		pad.dx = pad.dx/pad.friction
 	end	
@@ -339,6 +354,7 @@ function gameplay_update()
 	update_bricks()
 	update_pills()
 	update_powerups()
+	update_bullets()
 end
 
 gameplay_state = {
@@ -387,10 +403,7 @@ gameover_state = {
 local round_timer = 0
 
 function round_enter()
-    ball.stuck = true
-
-    bricks = {}
-    create_level(round)
+	init_level()
 	round_timer = 120
 end
 
@@ -436,6 +449,21 @@ function _init()
 	start_game()
 	change_state(round_state)
 	--create_level(round)	
+end
+
+function init_level()
+	ball.stuck = true
+	
+	active_powerups = {}
+	pills = {}
+	bricks = {}
+	create_level(round)	
+end
+
+function next_level()
+	round += 1
+	--active_powerups = {}
+	change_state(round_state)
 end
 
 ------------------------------------------------------------
@@ -933,9 +961,11 @@ function update_stuck_ball()
 	ball.y = pad.y - ball.r - 2
 	
 	-- Launch on X
-	if btnp(5) then
-	    ball.stuck = false
+	if ball.stuck and btnp(5) then
+		ball.dy = -ball.dy
+	   ball.stuck = false
 	end
+	
 end
 
 function update_ball()
@@ -1062,8 +1092,8 @@ function check_ball_bricks()
 
 end
 
-function hit_brick(brick)
 
+function damage_brick(brick)
 	if brick.hits > 0 then
 		brick.hits -= 1
 		
@@ -1077,6 +1107,33 @@ function hit_brick(brick)
         	spawn_pill(brick.x,brick.y,POWERUP_SLOW)
 		end
 	end
+end
+
+function check_bullet_bricks(bullet)
+
+	for brick in all(bricks) do
+	
+		if brick.alive and
+         bullet.x >= brick.x and
+         bullet.x <= brick.x + brick.width and
+         bullet.y >= brick.y and
+         bullet.y <= brick.y + brick.height then
+			
+			damage_brick(brick)
+			del(bullets,bullet)
+			sfx(3)
+			return true
+		
+		end
+	end
+
+	return false
+
+end
+
+function hit_brick(brick)
+
+	damage_brick(brick)
 	
 	local from_left   = ball.old_x + ball.r <= brick.x
 	local from_right  = ball.old_x - ball.r >= brick.x + brick.width
@@ -1153,7 +1210,7 @@ end
 function spawn_random_pill(x,y)
 	if rnd() < POWERUP_DROP_CHANCE then
 		local powerup = flr(rnd(#powerup_types)) + 1
-		spawn_pill(x,y,POWERUP_CATCH)
+		spawn_pill(x,y,POWERUP_LASER)
 		--spawn_pill(x,y,powerup)
 	end
 end
@@ -1170,6 +1227,11 @@ function hit_brick_v3(brick)
             end
             spawn_random_pill(brick.x,brick.y)
         end
+    end
+
+    -- Mega Ball does not bounce on destructible bricks
+    if ball.mega and brick.hits >= 0 then
+    	return
     end
 
     local from_left   = ball.old_x + ball.r <= brick.x
@@ -1367,22 +1429,62 @@ function draw_pills()
 	palt()
 end
 
+
+
 function activate_powerup(kind, duration)
-    active_powerups[kind] = duration
-    if kind == POWERUP_SLOW then
-        --set_ball_speed(BALL_SPEED_SLOW)
-        ball.speed = BALL_SPEED_SLOW
-        return
-    end    
+	active_powerups[kind] = duration
+	if kind == POWERUP_SLOW then
+	    --set_ball_speed(BALL_SPEED_SLOW)
+	    ball.speed = BALL_SPEED_SLOW
+	    return
+	end 
+	if kind == POWERUP_ENLARGE then
+	    pad.width = PADDLE_WIDTH_LARGE
+	    return
+	end        
+	if kind == POWERUP_PLAYER then
+	    lives += 1
+	    active_powerups[kind] = 60
+	    return
+	end   
+	if kind == POWERUP_BREAK then
+	    next_level()
+	    active_powerups[kind] = 60
+	    return
+	end 
+	if kind == POWERUP_MEGA  then
+	    ball.mega = true
+	    ball.sprite = BALL_SPRITE_MEGA
+	    return
+	end
+	if kind == POWERUP_LASER then
+		pad.laser = true
+		pad.sprite = PADDLE_SPRITE_LASER
+		return
+	end                 
 end
 
 function deactivate_powerup(kind, duration)
-    active_powerups[kind] = nil
-    if kind == POWERUP_SLOW then
-        --set_ball_speed(BALL_SPEED_NORMAL)
-        ball.speed = BALL_SPEED_NORMAL
-        return
-    end     
+	active_powerups[kind] = nil
+	if kind == POWERUP_SLOW then
+		--set_ball_speed(BALL_SPEED_NORMAL)
+		ball.speed = BALL_SPEED_NORMAL
+		return
+	end 
+	if kind == POWERUP_ENLARGE then
+		pad.width = PADDLE_WIDTH
+		return
+	end     
+	if kind == POWERUP_MEGA then
+		ball.mega = false
+		ball.sprite = BALL_SPRITE
+		return
+	end  
+	if kind == POWERUP_LASER then
+		pad.laser = false
+		pad.sprite = PADDLE_SPRITE
+		return
+	end 	   
 end
 
 function has_powerup(powerup)
@@ -1424,5 +1526,64 @@ function update_powerups()
 			active_powerups[powerup] = time
 		end
 	
+	end
+end
+
+function fire_lasers()
+	if #laser_shots >= 2 then
+		return
+	end
+	
+	local shot = {
+		bullets = {
+			{
+				x = pad.x + 10,
+				y = pad.y - 6,
+				width = 1,
+				height = 2,
+				speed = 6
+			},
+			{
+				x = pad.x + pad.width - 10,
+				y = pad.y - 6,
+				width = 1,
+				height = 2,
+				speed = 6
+			}
+		}
+	}
+		
+	add(laser_shots,shot)
+end
+
+
+function update_bullets()
+	for shot in all(laser_shots) do
+		local delete = false
+		for b in all(shot.bullets) do
+	
+			b.y-=b.speed
+			
+			--delete = b.y < GAME_Y
+			if b.y < GAME_Y then
+				delete = true
+				break
+			end
+			if check_bullet_bricks(b) then
+				delete = true
+				break
+         end
+		end
+		if delete then
+			del(laser_shots, shot)
+		end	
+	end
+end
+
+function draw_bullets()
+	for shot in all(laser_shots) do
+		for bullet in all(shot.bullets) do
+			spr(4, bullet.x, bullet.y)
+		end
 	end
 end
