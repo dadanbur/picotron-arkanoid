@@ -1,95 +1,85 @@
 # Picotron Arkanoid
 
-A remake of the classic **Arkanoid** arcade game developed in **Picotron** using **Lua**.
+<p align="center">
+  <img src="img/Arkanoid-white-banner.png" alt="Picotron Arkanoid Banner">
+</p>
 
-The goal of this project is to recreate the original gameplay while keeping the code clean, modular, and easy to understand. It is also a personal learning project focused on game development with Picotron.
+A faithful remake of the **Arkanoid** arcade classic built with **Picotron** using **Lua**.
+
+The project focuses on recreating the look, feel and gameplay of the original arcade while keeping the code clean and easy to understand.
 
 ## Features
 
-* Classic Arkanoid gameplay
-* Paddle and ball physics
-* Brick collision system
-* Score and lives management
-* Level loading from text maps
-* Retro-inspired HUD
-* Clean and modular Lua code
+- Classic Arkanoid gameplay
+- 15 handcrafted levels
+- Multiple brick types
+  - Normal
+  - Silver (2 hits)
+  - Indestructible Gold
+- Power-ups
+  - Slow Ball
+  - Extra Life
+  - Catch
+  - Enlarge Paddle
+  - Mega Ball
+  - Multi Ball
+  - Laser
+  - Break
+- Animated paddle
+- Laser weapon
+- Particle effects
+- Screen shake
+- Animated power-up capsules
+- Retro HUD inspired by the original arcade
+- Level transition screens
 
 ## Controls
 
-| Key          | Action          |
-| ------------ | --------------- |
-| Left / Right | Move paddle     |
-| X            | Launch the ball |
-| Esc          | Quit            |
+| Key | Action |
+|------|--------|
+| Left / Right | Move paddle |
+| X | Launch ball / Fire lasers |
+| Esc | Quit |
 
-## Project Structure
+## Running
 
-```
-picotron-arkanoid/
-│
-├── main.lua          # Entry point
-├── game.lua          # Game loop
-├── paddle.lua        # Paddle logic
-├── ball.lua          # Ball movement and collisions
-├── bricks.lua        # Brick management
-├── levels.lua        # Level loading
-├── hud.lua           # HUD rendering
-├── constants.lua     # Game constants
-└── sprites/          # Graphics
-```
+Open the cartridge with **Picotron** and run it.
 
-> The project structure may evolve as development progresses.
+## Technical Highlights
 
-## Goals
-
-* Recreate the feel of the original Arkanoid
-* Keep the code readable and well organized
-* Use function references instead of large conditional state machines whenever possible
-* Follow consistent coding conventions
-* Learn more about Picotron development
-
-## Building
-
-Open the project with **Picotron** and run:
-
-```
-load main.lua
-run
-```
-
-(or simply open the cartridge if using the Picotron editor.)
-
-## Development
-
-This project is written entirely in **Lua** for **Picotron**.
-
-Coding conventions:
-
-* Variables, functions and comments are written in English.
-* Small, focused functions.
-* Modular architecture.
-* Readable code over clever code.
+- Written entirely in Lua
+- Text-based level definitions
+- Collision and ball deflection system
+- Particle engine
+- Power-up framework
+- Multiple simultaneous balls
+- Modular game systems (work in progress)
 
 ## Roadmap
 
-* [x] Paddle movement
-* [x] Ball physics
-* [x] Brick collision
-* [x] HUD
-* [ ] Multiple levels
-* [ ] Power-ups
-* [ ] Sound effects
-* [ ] Music
-* [ ] High score table
-* [ ] Title screen
-* [ ] Game Over screen
+- [x] Paddle movement
+- [x] Ball physics
+- [x] Brick collision
+- [x] 15 levels
+- [x] HUD
+- [x] Power-ups
+- [x] Multi-ball
+- [x] Laser
+- [x] Particle effects
+- [x] Game Over screen
+- [x] Stage Clear screen
+- [ ] Title screen
+- [ ] Music
+- [ ] High score table
+- [ ] Enemy stages
+- [ ] Final polish
 
 ## Acknowledgements
 
-This project is inspired by **Arkanoid**, originally created by **Taito** in 1986.
+Inspired by **Arkanoid** (Taito, 1986).
 
-It is a non-commercial fan project created for educational purposes and to explore game development with Picotron.
+This is a non-commercial fan project created for learning and for the love of retro games.
 
 ## License
 
-This project is released under the MIT License.
+Released under the MIT License.
