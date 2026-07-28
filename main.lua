@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-28 09:28:21",revision=385]]
+--[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-28 18:51:18",revision=458]]
 include "./palette.lua"
 
 SCREEN_WIDTH  = 480
@@ -54,6 +54,8 @@ BRICK_FLASH = 18
 
 BRICKS_X = FRAME_X + FRAME_SIZE
 BRICKS_Y = FRAME_Y + FRAME_SIZE + (BRICK_HEIGHT*3) 
+
+shadow_color = 40
 
 pad = {
 	x = GAME_X + (GAME_WIDTH - PADDLE_WIDTH) / 2,
@@ -117,7 +119,7 @@ remaining_bricks = 0
 bricks={}  	
 
 SPR_PILL_SHADOW = 48
-POWERUP_DROP_CHANCE = 1
+POWERUP_DROP_CHANCE = 0.25
 
 POWERUP_NONE			= 0
 POWERUP_SLOW			= 1
@@ -258,8 +260,175 @@ levels={
 		"0000000000000",
 		"3333333333333",
 		"0000000000000",
-		"GGGGGGGGGG111",}		
-	}
+		"GGGGGGGGGG111",},		
+	[4]={
+		"0234S60812340",
+		"034S6701234S0",
+		"04S6780234S60",
+		"0S6781034S670",
+		"06781204S6780",
+		"0781230S67810",
+		"0812340678120",
+		"01234S0781230",
+		"0234S60812340",
+		"034S6701234S0",
+		"04S6780234S60",
+		"0S6781034S670",
+		"06781204S6780",
+		"0781230S67810",},
+	[5]={
+		"0008000008000",
+		"0008000008000",
+		"0000800080000",
+		"0000800080000",
+		"000SSSSSSS000",
+		"000SSSSSSS000",
+		"00SS5SSS5SS00",
+		"00SS5SSS5SS00",
+		"0SSSSSSSSSSS0",
+		"0SSSSSSSSSSS0",
+		"0SSSSSSSSSSS0",
+		"0S0SSSSSSS0S0",
+		"0S0S00000S0S0",
+		"0S0S00000S0S0",
+		"0000SS0SS0000",
+		"0000SS0SS0000",},
+	[6]={
+		"6050403040506",
+		"6050403040506",
+		"6050403040506",
+		"6050403040506",
+		"6050403040506",
+		"60G8G8G8G8G06",
+		"6050403040506",
+		"6050403040506",
+		"6050403040506",
+		"6050403040506",
+		"G0G0G0G0G0G0G",
+		"6050403040506",},
+	[7]={
+		"0000011100000",
+		"0000111110000",
+		"0001111111000",
+		"0011111111100",
+		"0011111111100",
+		"0011111111100",
+		"0011111111100",
+		"0011111111100",
+		"0011111111100",
+		"0001111111000",
+		"0000111110000",
+		"0000011100000",},
+	[8]={
+		"000G0G0G0G000",
+		"0G000000000G0",
+		"0GG0G000G0GG0",
+		"0000001000000",
+		"00000G2G00000",
+		"0002003002000",
+		"0000004000000",
+		"0002005002000",
+		"0000026200000",
+		"0000007000000",
+		"0GG0G000G0GG0",
+		"0G000000000G0",
+		"000G0G0G0G000",},
+	[9]={
+		"0G0G00000G0G0",
+		"0G4G00000G4G0",
+		"0G3G00000G3G0",
+		"0GGG00000GGG0",
+		"0000000000000",
+		"0000711180000",
+		"0000722280000",
+		"0000733380000",
+		"0000744480000",
+		"0000755580000",
+		"0000766680000",},
+	[10]={
+		"0G00000000000",
+		"0000000000000",
+		"0G00000000000",
+		"0G00000000000",
+		"0G00000000000",
+		"0G00000100000",
+		"0G00001110000",
+		"0G00011111000",
+		"0G00111111100",
+		"0G01111S11110",
+		"0G00111111100",
+		"0G00011111000",
+		"0G00001110000",
+		"0G00000100000",
+		"0G00000000000",
+		"0G00000000000",
+		"0GGGGGGGGGGGG",},
+	[11]={
+		"0SSSSSSSSSSS0",
+		"0S000000000S0",
+		"0S0SSSSSSS0S0",
+		"0S0S00000S0S0",
+		"0S0S0SSS0S0S0",
+		"0S0S0S0S0S0S0",
+		"0S0S0SSS0S0S0",
+		"0S0S00000S0S0",
+		"0S0SSSSSSS0S0",
+		"0S000000000S0",
+		"0SSSSSSSSSSS0",},  
+	[12]={
+		"GGGGGGGGGGGGG",
+		"0000G00000G10",
+		"0G10G00000G00",
+		"0G00G00G00G00",
+		"0G00G10G00G00",
+		"0G00G00G00G00",
+		"0G01G00G01G00",
+		"0G00G00G00G00",
+		"0G00G00G00G00",
+		"0G00G01G00G00",
+		"0G00G00G00G00",
+		"0G10000G00000",
+		"0G00000G00001",
+		"0GGGGGGGGGGGG",},
+  [13]={
+		"0111011101110",
+		"0111011101110",
+		"0111011101110",
+		"0111011101110",
+		"0111011101110",
+		"0111011101110",
+		"0111011101110",
+		"0111011101110",},
+	[14]={
+		"6666666666666",
+		"G00000000000G",
+		"6666666666666",
+		"0000000000000",
+		"2SSSSSSSSSSS2",
+		"G00000000000G",
+		"1111111111111",
+		"0000000000000",
+		"3SSSSSSSSSSS3",
+		"G00000000000G",
+		"5555555555555",
+		"0000000000000",
+		"5555555555555",		
+		"G00000000000G",},
+	[15]={
+		"31G3333333G13",
+		"318G33333G413",
+		"3188G333G4413",
+		"31888G1G44413",
+		"3188881444413",
+		"3188881444413",
+		"3S888814444S3",
+		"33S8881444S33",
+		"333S88144S333",
+		"3333S814S3333",
+		"33333S1S33333",
+
+		}				
+}
 
 lives = 3
 score = 0
@@ -314,6 +483,7 @@ function gameplay_draw()
     draw_background()
     draw_left_margin()
     draw_game_area()
+    draw_bricks_shadow()
     draw_bricks()
     draw_ball()
     draw_pad()
@@ -342,6 +512,12 @@ function gameplay_update()
 	if pad.laser and btnp(5) then
 		fire_lasers()
 	end
+
+	--- TMP Next level
+	if btnp(4) then
+		next_level()
+	end
+
 		
 	if not button_pressed then
 		pad.dx = pad.dx/pad.friction
@@ -440,7 +616,7 @@ round_state = {
 function start_game()
     lives = 3
     score = 0
-    round = 1
+    round = 15
     ball.stuck = true
 end
 
@@ -507,7 +683,7 @@ end
 
 function draw_pad_shadow()
 
-	local SHADOW_OFFSET_X = 4
+	local SHADOW_OFFSET_X = 1
 	local SHADOW_OFFSET_Y = 4
 	
 	local EDGE_WIDTH = 7
@@ -683,6 +859,29 @@ function draw_game_frame()
 	palt()	
 end
 
+function draw_borders_shadow()
+	local shadow_size = 6
+	
+	-- left inner shadow
+	rectfill(
+		GAME_X,
+		GAME_Y,
+		GAME_X + shadow_size - 1,
+		GAME_BOTTOM,
+		shadow_color
+	)
+	
+	-- top inner shadow
+	rectfill(
+		GAME_X,
+		GAME_Y,
+		GAME_RIGHT,
+		GAME_Y + shadow_size - 1,
+		shadow_color
+	)
+
+end
+
 function draw_game_area()
    rectfill(
        GAME_X,
@@ -706,7 +905,7 @@ function draw_game_area()
 			)
 		end
 	end    
-    
+   draw_borders_shadow() 
 end
 
 function draw_hud()
@@ -721,12 +920,28 @@ function draw_hud()
     
 end
 
-function draw_bricks()
+function draw_bricks_shadow()
+	local shadow_size = 3
+	for brick in all(bricks) do
+		if brick.alive then	
+			-- Brick body
+			rectfill(
+				brick.x + shadow_size,
+				brick.y + shadow_size,
+				brick.x + brick.width + shadow_size*2,
+				brick.y + brick.height + shadow_size*2,
+				shadow_color
+			)		
+		end
+	end
 
+end
+
+
+function draw_bricks()
 	for brick in all(bricks) do
 		if brick.alive then
 	
-		
 			-- Brick body
 			rectfill(
 				brick.x,
@@ -776,14 +991,11 @@ function draw_bricks()
 			if brick.type == 10 then
 				draw_gold_brick(brick)
 			end
-			
 		
-			
 		end
 	end
 
 end
-
 
 function draw_brick_flash(brick)
 
@@ -921,23 +1133,27 @@ function draw_gold_brick(brick)
 end
 
 function draw_hud_score()
-    local x = HUD_X + 12
-
-    print("A  R  K  A  N  O  I  D", x, 20, 7)
-
-    print("LIVES", x, 50, 8)
-    print(lives,  x, 60, 7)
-
-    print("SCORE", x, 90, 8)
-    print(score,  x, 100, 7)
-
-    print("ROUND", x, 130, 8)
-    print(round,  x, 140, 7)
-
-    print("(C) 2026 DADANBUR", x, SCREEN_HEIGHT - 26, 28)
-    print("ALL RIGHTS RESERVED", x, SCREEN_HEIGHT - 16, 28)
-    
-    draw_active_powerups()
+	local x = HUD_X + 12
+	
+	--print("A  R  K  A  N  O  I  D", x, 20, 7)
+	spr(128,x,10)
+	
+	local y = 70
+	print("LIVES", x, y, 8)
+	print(lives,  x, y + 10, 7)
+	
+	y += 25
+	print("SCORE", x, y, 8)
+	print(score,  x, y + 10, 7)
+	
+	y += 25
+	print("ROUND", x, y, 8)
+	print(round,  x, y + 10, 7)
+	
+	print("(C) 2026 DADANBUR", x, SCREEN_HEIGHT - 26, 28)
+	print("ALL RIGHTS RESERVED", x, SCREEN_HEIGHT - 16, 28)
+	
+	draw_active_powerups()
 end
 
 
@@ -1104,7 +1320,7 @@ function damage_brick(brick)
 			if remaining_bricks == 0 then
         		next_round()
         	end
-        	spawn_pill(brick.x,brick.y,POWERUP_SLOW)
+        	spawn_random_pill(brick.x,brick.y)
 		end
 	end
 end
@@ -1210,24 +1426,13 @@ end
 function spawn_random_pill(x,y)
 	if rnd() < POWERUP_DROP_CHANCE then
 		local powerup = flr(rnd(#powerup_types)) + 1
-		spawn_pill(x,y,POWERUP_LASER)
-		--spawn_pill(x,y,powerup)
+		--spawn_pill(x,y,POWERUP_LASER)
+		spawn_pill(x,y,powerup)
 	end
 end
 
 function hit_brick_v3(brick)
-    if brick.hits > 0 then
-        brick.hits -= 1
-        if brick.hits == 0 then
-            brick.alive = false
-            score += brick.score
-            remaining_bricks -= 1
-            if remaining_bricks == 0 then
-                next_round()
-            end
-            spawn_random_pill(brick.x,brick.y)
-        end
-    end
+    damage_brick(brick)
 
     -- Mega Ball does not bounce on destructible bricks
     if ball.mega and brick.hits >= 0 then
@@ -1506,7 +1711,8 @@ function draw_active_powerups()
 			palt(0,false)		
 			spr(p.sprites[1], x, y)
 			palt()
-			print(p.name.." ("..flr(time/60)..")", x + 20, y + 2, p.color)
+			--print(p.name.." ("..flr(time/60)..")", x + 20, y + 2, p.color)
+			print (p.name, x + 20, y + 2, p.color)
 		end
 		
 		y += 12
