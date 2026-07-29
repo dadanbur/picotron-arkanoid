@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-28 18:51:18",revision=458]]
+--[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-29 17:54:33",revision=611]]
 include "./palette.lua"
 
 SCREEN_WIDTH  = 480
@@ -88,6 +88,23 @@ ball = {
 	speed = BALL_SPEED_NORMAL,
 	stuck = true,
 	mega = false
+}
+
+
+FONT = {
+    sprite = 56,
+    width = 8,
+    height = 8,
+    spacing = 8,
+
+    chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789",
+    lookup = {},
+
+    widths = {
+        ["I"] = 4,
+        ["1"] = 5,
+        [" "] = 4
+    }
 }
 
 BRICK_EMPTY		= "0"
@@ -540,6 +557,84 @@ gameplay_state = {
 }
 
 --------------------------
+-- INTRO STATE
+--------------------------
+local intro_timer = 0
+function intro_enter()
+	intro_timer = 0
+end
+
+function intro_draw()
+	cls(0)
+	draw_starfield()
+	
+	spr(136,1,60)
+	
+	--if (intro_timer // 10) % 2 == 0 then
+	--if intro_timer % 80 < 75 then
+	font_print("PRESS X KEY TO START",165,180,7)
+	--end
+end
+
+function intro_update()
+	intro_timer += 1
+	--- Start Game
+	if btnp(5) then
+		change_state(round_state)
+	end
+	update_starfield()
+
+
+end
+
+intro_state = {
+    enter = intro_enter,
+    update = intro_update,
+    draw = intro_draw
+}
+
+starfield = {}
+STARFIELD_X = 80
+STARFIELD_Y = 1
+STARFIELD_WIDTH=300
+STARFIELD_HEIGHT=270
+for i=1,100 do
+	local x=STARFIELD_X + flr(rnd(STARFIELD_WIDTH))
+	local y=STARFIELD_Y + flr(rnd(STARFIELD_HEIGHT))
+	local s=rnd(1.5) + 0.5
+	add(starfield,{x=x,y=y,speed=s})
+end
+
+function draw_starfield()	
+	for star in all(starfield) do
+		local x = star.x
+		local y = star.y
+		local speed = star.speed
+		local col = 6
+		
+		if speed < 1.5 then
+			col = 13
+		end		
+		if speed < 1 then
+			col = 1
+		end
+			
+		--pset(10,10,7)
+		rectfill(x,y,x+1,y+1,col)
+	end
+end
+
+function update_starfield()
+	for star in all(starfield) do
+		star.y += star.speed
+		if (star.y > STARFIELD_Y + STARFIELD_HEIGHT - 2) then
+			star.y = STARFIELD_Y
+			star.x = STARFIELD_X + flr(rnd(STARFIELD_WIDTH))
+		end	
+	end
+end
+
+--------------------------
 -- GAMEOVER STATE
 --------------------------
 
@@ -587,10 +682,17 @@ function round_draw()
 	gameplay_draw()
 	local text = "ROUND "..round
 	local x = GAME_X + (GAME_WIDTH - #text * 8) / 2
-	local y = GAME_Y + GAME_HEIGHT / 2 + 20
+	local y = GAME_Y + GAME_HEIGHT / 2 + 40
 
-	print(text, x+1, y+1, 1)
-	print(text, x, y, 7)
+	--font_print(text, x+1, y+1, 1)
+	font_print(text, x, y, 7)
+	
+	text = "READY"
+	x = GAME_X + (GAME_WIDTH - #text * 8) / 2	
+	y += 18
+	
+	font_print(text, x, y, 7)
+	
 end
 
 function round_update()
@@ -616,15 +718,16 @@ round_state = {
 function start_game()
     lives = 3
     score = 0
-    round = 15
+    round = 1
     ball.stuck = true
 end
 
 function _init()
 	init_palette()
+	init_font()
 	start_game()
-	change_state(round_state)
-	--create_level(round)	
+	--change_state(round_state)
+	change_state(intro_state)
 end
 
 function init_level()
@@ -1136,22 +1239,22 @@ function draw_hud_score()
 	local x = HUD_X + 12
 	
 	--print("A  R  K  A  N  O  I  D", x, 20, 7)
-	spr(128,x,10)
-	
-	local y = 70
-	print("LIVES", x, y, 8)
-	print(lives,  x, y + 10, 7)
-	
-	y += 25
-	print("SCORE", x, y, 8)
-	print(score,  x, y + 10, 7)
+	spr(128,x - 8,10)
+		
+	local y = 80
+	font_print("LIVES", x, y, 8)
+	font_print(lives.."",  x, y + 10, 7)
 	
 	y += 25
-	print("ROUND", x, y, 8)
-	print(round,  x, y + 10, 7)
+	font_print("SCORE", x, y, 8)
+	font_print(score.."",  x, y + 10, 7)
 	
-	print("(C) 2026 DADANBUR", x, SCREEN_HEIGHT - 26, 28)
-	print("ALL RIGHTS RESERVED", x, SCREEN_HEIGHT - 16, 28)
+	y += 25
+	font_print("ROUND", x, y, 8)
+	font_print(round.."",  x, y + 10, 7)
+	
+	--font_print("(C) 2026 DADANBUR", x, SCREEN_HEIGHT - 26, 28)
+	font_print("PICOTRON VERSION BY DADANBUR", x - 6, SCREEN_HEIGHT - 16, 16)
 	
 	draw_active_powerups()
 end
@@ -1473,44 +1576,42 @@ function hit_brick_v3(brick)
     end
 end
 
+function create_brick(data,col,row)
+	add(bricks, {
+		x = BRICKS_X + (col - 1) * (BRICK_WIDTH + BRICK_SPACING_X),
+		y = BRICKS_Y + (row - 1) * (BRICK_HEIGHT + BRICK_SPACING_Y),
+		width  = BRICK_WIDTH,
+		height = BRICK_HEIGHT,
+		col   = data.col,
+		type  = data.type,
+		score = data.score,
+		hits  = data.hits,
+		flash = 0,
+		alive = true
+	})					
+end
+
 function create_level(level_index)
 	bricks = {}
 	remaining_bricks = 0
 	local level = levels[level_index]
-
+	
 	for row = 1, #level do
-
 		local level_line = level[row]
-
+		
 		for col = 1, #level_line do
-
+		
 			local elem = sub(level_line, col, col)
-	
+			
 			-- Empty brick
-			if elem ~= BRICK_EMPTY then
-	
+			if elem ~= BRICK_EMPTY then			
 				local data = brick_types[elem]
-	
 				if data then
-	
-					add(bricks, {
-						x = BRICKS_X + (col - 1) * (BRICK_WIDTH + BRICK_SPACING_X),
-						y = BRICKS_Y + (row - 1) * (BRICK_HEIGHT + BRICK_SPACING_Y),
-						width  = BRICK_WIDTH,
-						height = BRICK_HEIGHT,
-						col   = data.col,
-						type  = data.type,
-						score = data.score,
-						hits  = data.hits,
-						flash = 0,
-						alive = true
-					})
-					
+					create_brick(data,col,row)
 					-- Count only breakable bricks
 					if data.hits > 0 then
-    					remaining_bricks += 1
-					end
-	
+						remaining_bricks += 1
+					end			
 				end
 			end
 		end
@@ -1791,5 +1892,38 @@ function draw_bullets()
 		for bullet in all(shot.bullets) do
 			spr(4, bullet.x, bullet.y)
 		end
+	end
+end
+
+
+
+function init_font()
+	FONT.lookup = {}
+	
+	for i = 1, #FONT.chars do
+		local c = sub(FONT.chars, i, i)
+		FONT.lookup[c] = i
+	end
+end
+
+function font_print(text, x, y, col)
+
+	for i = 1, #text do	
+		local c = sub(text, i, i)
+		
+		if c == " " then	
+			x += FONT.widths[" "] or FONT.spacing
+		else
+			local idx = FONT.lookup[c]
+			
+			if idx then
+			pal(7,col)
+			sspr(FONT.sprite,(idx - 1) * FONT.width + 1,1,FONT.width,FONT.height,x,y)
+			pal()
+			end
+			
+			x += FONT.widths[c] or FONT.spacing
+		
+		end	
 	end
 end
