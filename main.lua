@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-29 17:54:33",revision=611]]
+--[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-30 11:32:18",revision=657]]
 include "./palette.lua"
 
 SCREEN_WIDTH  = 480
@@ -76,6 +76,7 @@ BALL_SPRITE_MEGA = 2
 
 local d = 1 / sqrt(2)
 
+balls={}
 ball = {
 	x = GAME_X + (GAME_WIDTH - PADDLE_WIDTH) / 2,
 	y = SCREEN_HEIGHT - (PADDLE_HEIGHT + PADDLE_BOTTOM_MARGIN),
@@ -89,6 +90,7 @@ ball = {
 	stuck = true,
 	mega = false
 }
+
 
 
 FONT = {
@@ -502,7 +504,7 @@ function gameplay_draw()
     draw_game_area()
     draw_bricks_shadow()
     draw_bricks()
-    draw_ball()
+    draw_balls()
     draw_pad()
     draw_bullets()
     draw_pills()
@@ -513,6 +515,7 @@ end
 
 function gameplay_update()
 	local button_pressed=false
+	local ball = balls[1]
 	--left
 	if btn(0) then
 		button_pressed = true
@@ -543,7 +546,7 @@ function gameplay_update()
 	pad.x += pad.dx
 	pad.x = mid(GAME_X,pad.x,GAME_X + GAME_WIDTH - pad.width - 1)
 	
-	update_ball()
+	update_balls()
 	update_bricks()
 	update_pills()
 	update_powerups()
@@ -716,7 +719,7 @@ round_state = {
 ------------------------------------------------------------
 
 function start_game()
-    lives = 3
+    lives = 300
     score = 0
     round = 1
     ball.stuck = true
@@ -725,6 +728,10 @@ end
 function _init()
 	init_palette()
 	init_font()
+	
+	ball = create_ball()
+	add(balls,ball)
+	
 	start_game()
 	--change_state(round_state)
 	change_state(intro_state)
@@ -816,7 +823,13 @@ function draw_pad_shadow()
 
 end
 
-function draw_ball()
+function draw_balls()
+	for b in all(balls) do
+		draw_ball(b) 
+	end
+end
+
+function draw_ball(ball)
 	--SHADOW
 	palt(1,true)
 	palt(0,false)
@@ -1253,6 +1266,8 @@ function draw_hud_score()
 	font_print("ROUND", x, y, 8)
 	font_print(round.."",  x, y + 10, 7)
 	
+	--print("BALLS: "..#balls,x,y+30,7)
+	
 	--font_print("(C) 2026 DADANBUR", x, SCREEN_HEIGHT - 26, 28)
 	font_print("PICOTRON VERSION BY DADANBUR", x - 6, SCREEN_HEIGHT - 16, 16)
 	
@@ -1274,7 +1289,7 @@ function update_bricks()
 	end
 end
 
-function update_stuck_ball()
+function update_stuck_ball(ball)
 	-- Keep the ball attached to the paddle
 	ball.x = pad.x + flr(pad.width / 2) - ball.r
 	ball.y = pad.y - ball.r - 2
@@ -1287,10 +1302,16 @@ function update_stuck_ball()
 	
 end
 
-function update_ball()
+function update_balls()
+	for b in all(balls) do	
+		update_ball(b)
+	end
+end
+
+function update_ball(ball)
 
 	if ball.stuck then
-		update_stuck_ball()
+		update_stuck_ball(ball)
 		return
 	end
 
@@ -1325,22 +1346,29 @@ function update_ball()
 	if ball.y - ball.r > SCREEN_HEIGHT then
 		sfx(2)
 		
-		lives -= 1
+		if #balls <= 1 then
 		
-		if lives > 0 then
-			reset_ball()
-		else
-			change_state(gameover_state)
+			lives -= 1
+			
+			if lives > 0 then
+				balls[1] = create_ball()
+				reset_ball(balls[1])
+			else
+				change_state(gameover_state)
+			end
+			
+		else 
+			del(balls,ball)
 		end
 		
 		return
 	end	
 		
-	check_ball_paddle()
-	check_ball_bricks()
+	check_ball_paddle(ball)
+	check_ball_bricks(ball)
 end
 
-function reset_ball()
+function reset_ball(ball)
 	ball.stuck = true
 
 	ball.x = pad.x + flr(pad.width / 2)
@@ -1348,7 +1376,7 @@ function reset_ball()
 
 end
 
-function check_ball_paddle()
+function check_ball_paddle(ball)
 
 	-- Ignore collision if the ball is moving upwards
 	if ball.dy <= 0 then
@@ -1392,7 +1420,7 @@ function check_ball_paddle()
 
 end
 
-function check_ball_bricks()
+function check_ball_bricks(ball)
 
 	for brick in all(bricks) do
 	
@@ -1402,7 +1430,7 @@ function check_ball_bricks()
 			and ball.y + ball.r >= brick.y
 			and ball.y - ball.r <= brick.y + brick.height then
 			
-			hit_brick_v3(brick)
+			hit_brick_v3(brick,ball)
 			sfx(3)
 			return
 		
@@ -1529,12 +1557,12 @@ end
 function spawn_random_pill(x,y)
 	if rnd() < POWERUP_DROP_CHANCE then
 		local powerup = flr(rnd(#powerup_types)) + 1
-		--spawn_pill(x,y,POWERUP_LASER)
+		--spawn_pill(x,y,POWERUP_DISRUPTION)
 		spawn_pill(x,y,powerup)
 	end
 end
 
-function hit_brick_v3(brick)
+function hit_brick_v3(brick,ball)
     damage_brick(brick)
 
     -- Mega Ball does not bounce on destructible bricks
@@ -1629,7 +1657,8 @@ function next_round()
     end
 
     create_level(round)
-    reset_ball()
+    balls[1] = create_ball()
+    reset_ball(ball)
 
 end
 
@@ -1752,15 +1781,19 @@ function activate_powerup(kind, duration)
 	    lives += 1
 	    active_powerups[kind] = 60
 	    return
-	end   
+	end  
+	if kind == POWERUP_DISRUPTION then
+	    multiball(balls[1])
+	    active_powerups[kind] = 60
+	    return
+	end  	 
 	if kind == POWERUP_BREAK then
 	    next_level()
 	    active_powerups[kind] = 60
 	    return
 	end 
 	if kind == POWERUP_MEGA  then
-	    ball.mega = true
-	    ball.sprite = BALL_SPRITE_MEGA
+	    megaball(true)
 	    return
 	end
 	if kind == POWERUP_LASER then
@@ -1782,8 +1815,7 @@ function deactivate_powerup(kind, duration)
 		return
 	end     
 	if kind == POWERUP_MEGA then
-		ball.mega = false
-		ball.sprite = BALL_SPRITE
+		megaball(false)
 		return
 	end  
 	if kind == POWERUP_LASER then
@@ -1795,6 +1827,18 @@ end
 
 function has_powerup(powerup)
     return active_powerups[powerup] ~= nil
+end
+
+function megaball(active)
+	for ball in all(balls) do
+		if active then
+			ball.mega = true
+		   ball.sprite = BALL_SPRITE_MEGA
+	   else
+			ball.mega = false
+		   ball.sprite = BALL_SPRITE
+	   end	
+	end
 end
 
 function draw_active_powerups()
@@ -1926,4 +1970,69 @@ function font_print(text, x, y, col)
 		
 		end	
 	end
+end
+
+function create_ball()
+	local ball = {
+		x = GAME_X + (GAME_WIDTH - PADDLE_WIDTH) / 2,
+		y = SCREEN_HEIGHT - (PADDLE_HEIGHT + PADDLE_BOTTOM_MARGIN),
+		old_x = 0,
+		old_y = 0,
+		r = 3,
+		dx = d,
+		dy = -d,
+		sprite = BALL_SPRITE,
+		speed = BALL_SPEED_NORMAL,
+		stuck = true,
+		mega = false
+	}
+	
+	return ball
+end
+
+function duplicate_ball(ball)
+	local b = create_ball()
+	b.x = ball.x
+	b.y = ball.y
+	b.dx = ball.dx
+	b.dy = ball.dy 
+	b.ang = ball.ang
+	b.speed = ball.speed
+	b.mega = ball.mega
+	b.stuck = false
+
+	return b 
+end
+
+function sign(n)
+	 if n < 0 then return -1
+	 elseif n > 0 then return 1
+	 else return 0
+	 end
+end
+
+function set_angle(ball,ang)
+	ball.ang=ang
+	if ang == 2 then
+		ball.dx = 0.50 * sign(ball.dx)
+		ball.dy = 1.30 * sign(ball.dy)
+	elseif ang == 0 then
+		ball.dx = 1.30 * sign(ball.dx)
+		ball.dy = 0.50 * sign(ball.dy)
+	else
+		ball.dx=sign(ball.dx)
+		ball.dy=sign(ball.dy)
+	end
+end
+
+function multiball(ball)
+	local b2 = duplicate_ball(ball)
+	local b3 = duplicate_ball(ball)
+
+	set_angle(ball,0)
+	set_angle(b2,1)
+	set_angle(b3,2)
+
+	add(balls,b2)
+	add(balls,b3)
 end
