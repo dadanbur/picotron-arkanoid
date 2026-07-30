@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-07-27 00:04:05",modified="2026-07-27 09:03:28",revision=22]]
+--[[pod_format="raw",created="2026-07-27 00:04:05",modified="2026-07-30 18:00:45",revision=25]]
 function init_palette()
 
 	PALETTE={
@@ -14,7 +14,11 @@ function init_palette()
 		"F8B800", --GOLDEN
 		"BC1F00","FF5100","626262","8F8F8F","00009D","008FFF","00FFFF", -- SHIP
 		"000062","000063","000070","000071","00008f","000090","00009D","00009E","0000AF","0000BC","0000BD", -- BLUE
-		"006200","006300","008F00","009000","00AE00","00AF00"
+		"006200","006300","008F00","009000","00AE00","00AF00",
+		"F80000", -- Bright red
+		"C00000", -- Red
+		"880000", -- Dark red
+		"500000"  -- Very dark red
 	}
 
 	PALETTE_POS={

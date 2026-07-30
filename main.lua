@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-30 11:32:18",revision=657]]
+--[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-07-30 18:18:45",revision=737]]
 include "./palette.lua"
 
 SCREEN_WIDTH  = 480
@@ -55,6 +55,7 @@ BRICK_FLASH = 18
 BRICKS_X = FRAME_X + FRAME_SIZE
 BRICKS_Y = FRAME_Y + FRAME_SIZE + (BRICK_HEIGHT*3) 
 
+demo_mode = true
 shadow_color = 40
 
 pad = {
@@ -66,7 +67,8 @@ pad = {
 	friction=1.5,
 	sprite = PADDLE_SPRITE,
 	dx = 0,
-	laser = false
+	laser = false,
+	stuck_catch=0
 }
 
 BALL_SPEED_NORMAL = 2.5
@@ -409,7 +411,7 @@ levels={
 		"0G10000G00000",
 		"0G00000G00001",
 		"0GGGGGGGGGGGG",},
-  [13]={
+	[13]={
 		"0111011101110",
 		"0111011101110",
 		"0111011101110",
@@ -452,9 +454,16 @@ levels={
 lives = 3
 score = 0
 
---------------------------
+----------------------------------------------------------------------
 -- STATE MACHINE
---------------------------
+----------------------------------------------------------------------
+-- States:
+-- intro_state          -> Title / Start screen
+-- round_state          -> Round intro
+-- gameplay_state       -> Main gameplay
+-- gameover_state       -> Game Over screen
+-- gamecompleted_state  -> Game completed screen
+----------------------------------------------------------------------
 
 state_manager = {
 	current = nil
@@ -490,9 +499,9 @@ function _draw()
 end
 
 
---------------------------
+----------------------------------------------------------------------
 -- GAMEPLAY STATE
---------------------------
+----------------------------------------------------------------------
 
 function gameplay_enter()
 
@@ -534,7 +543,7 @@ function gameplay_update()
 	end
 
 	--- TMP Next level
-	if btnp(4) then
+	if demo_mode and btnp(4) then
 		next_level()
 	end
 
@@ -559,9 +568,9 @@ gameplay_state = {
     draw = gameplay_draw
 }
 
---------------------------
+----------------------------------------------------------------------
 -- INTRO STATE
---------------------------
+----------------------------------------------------------------------
 local intro_timer = 0
 function intro_enter()
 	intro_timer = 0
@@ -575,7 +584,7 @@ function intro_draw()
 	
 	--if (intro_timer // 10) % 2 == 0 then
 	--if intro_timer % 80 < 75 then
-	font_print("PRESS X KEY TO START",165,180,7)
+	font_print("PRESS X KEY TO START",165,180,6)
 	--end
 end
 
@@ -597,54 +606,87 @@ intro_state = {
 }
 
 starfield = {}
-STARFIELD_X = 80
-STARFIELD_Y = 1
-STARFIELD_WIDTH=300
+STARFIELD_X = 70
+--STARFIELD_Y = 1
+STARFIELD_Y = SCREEN_HEIGHT
+STARFIELD_WIDTH=340
 STARFIELD_HEIGHT=270
-for i=1,100 do
+for i=1,500 do
 	local x=STARFIELD_X + flr(rnd(STARFIELD_WIDTH))
 	local y=STARFIELD_Y + flr(rnd(STARFIELD_HEIGHT))
 	local s=rnd(1.5) + 0.5
 	add(starfield,{x=x,y=y,speed=s})
 end
 
-function draw_starfield()	
+function draw_starfield_old()	
+	--local star_colors = {1,13,6}
+	local star_colors = {8,24,33}
+
 	for star in all(starfield) do
 		local x = star.x
 		local y = star.y
 		local speed = star.speed
-		local col = 6
+		local color_index = 1
 		
 		if speed < 1.5 then
-			col = 13
+			color_index = 3
 		end		
 		if speed < 1 then
-			col = 1
+			color_index = 2
 		end
 			
 		--pset(10,10,7)
-		rectfill(x,y,x+1,y+1,col)
+		local size = flr(rnd(4))
+		rectfill(x,y,x+size,y+size,star_colors[color_index])
+	end
+end
+
+function draw_starfield()
+	local star_colors = {57, 58, 59, 60}
+
+	for star in all(starfield) do
+		local x = star.x
+		local y = star.y
+
+		-- Calculate color based on screen height
+		local percentage = 1 - y / SCREEN_HEIGHT
+		local color_index = 1 + flr(percentage * #star_colors)
+
+		color_index = mid(1, color_index, #star_colors)
+
+		local size = star.size or flr(rnd(4))
+
+		rectfill(
+			x,
+			y,
+			x + size,
+			y + size,
+			star_colors[color_index]
+		)
 	end
 end
 
 function update_starfield()
 	for star in all(starfield) do
-		star.y += star.speed
-		if (star.y > STARFIELD_Y + STARFIELD_HEIGHT - 2) then
+		--star.y += star.speed
+		star.y -= star.speed
+		--if (star.y > STARFIELD_Y + STARFIELD_HEIGHT - 2) then
+		if (star.y < 0) then
 			star.y = STARFIELD_Y
 			star.x = STARFIELD_X + flr(rnd(STARFIELD_WIDTH))
 		end	
 	end
 end
 
---------------------------
+----------------------------------------------------------------------
 -- GAMEOVER STATE
---------------------------
+----------------------------------------------------------------------
 
 function gameover_enter()
 end
 
 function gameover_draw()
+	--[[
 	cls(24)
 	local text = "GAME OVER"
 	local x = (SCREEN_WIDTH - #text * 8) / 2
@@ -652,16 +694,26 @@ function gameover_draw()
 
 	print(text, x+1, y+1, 1)
 	print(text, x, y, next_text_color())
+	--]]
+	gameplay_draw()
+	local text = "GAME OVER"
+	local x = GAME_X + (GAME_WIDTH - #text * 8) / 2
+	local y = GAME_Y + GAME_HEIGHT / 2 + 40
+
+	--font_print(text, x+1, y+1, 1)
+	font_print(text, x, y, 7)
+	
 end
 
 function gameover_update()
 	if btnp(5) then
-		change_state(gameplay_state)
+		change_state(intro_state)
 	end
 end
 
 function gameover_leave()
-	start_game()
+	--change_state(init_state)
+	--start_game()
 end
 
 gameover_state = {
@@ -671,9 +723,38 @@ gameover_state = {
     leave = gameover_leave
 }
 
---------------------------
+----------------------------------------------------------------------
+-- GAMECOMPLETED STATE
+----------------------------------------------------------------------
+
+function gamecompleted_enter()
+end
+
+function gamecompleted_draw()
+	cls(1)
+	local text = "C O N G R A T U L A T I O N S"
+	local x = (SCREEN_WIDTH - #text * 8) / 2
+	local y = SCREEN_HEIGHT / 2
+
+	--print(text, x+1, y+1, 1)
+	font_print(text, x, y, next_text_color())
+end
+
+function gamecompleted_update()
+	if btnp(5) then
+		change_state(intro_state)
+	end
+end
+
+gamecompleted_state = {
+    enter = gamecompleted_enter,
+    update = gamecompleted_update,
+    draw = gamecompleted_draw
+}
+
+----------------------------------------------------------------------
 -- ROUND STATE
---------------------------
+----------------------------------------------------------------------
 local round_timer = 0
 
 function round_enter()
@@ -719,10 +800,15 @@ round_state = {
 ------------------------------------------------------------
 
 function start_game()
-    lives = 300
+    lives = 3
     score = 0
     round = 1
     ball.stuck = true
+    
+    if demo_mode then
+    	lives = 300
+    end
+    change_state(intro_state)
 end
 
 function _init()
@@ -734,7 +820,7 @@ function _init()
 	
 	start_game()
 	--change_state(round_state)
-	change_state(intro_state)
+	--change_state(intro_state)
 end
 
 function init_level()
@@ -746,11 +832,12 @@ function init_level()
 	create_level(round)	
 end
 
+
 function next_level()
-	round += 1
-	--active_powerups = {}
 	change_state(round_state)
+	next_round()
 end
+
 
 ------------------------------------------------------------
 -- DRAW
@@ -777,19 +864,6 @@ function draw_pad()
 	palt()	
 end
 
-function draw_pad_shadow_old()
-	local _x=pad.x+4
-	local _y=pad.y+4
-	rectfill(_x+6,_y+2,_x+pad.width-2,_y+pad.height-2,0)
-	palt(1,true)
-	palt(0,false)
-	sspr(11,0,0,7,15,_x,_y)
-	for i=8,pad.width-6 do
-		sspr(11,7,0,1,15,_x+i,_y)
-	end
-	sspr(11,9,0,7,15,_x+pad.width-4,_y)
-	palt()	
-end
 
 function draw_pad_shadow()
 
@@ -853,68 +927,6 @@ function draw_left_margin()
         SCREEN_HEIGHT - 1,
         0
     )
-end
-
-function draw_game_frame_v2()
-
-    -- TOP
-    rectfill(
-        FRAME_X,
-        FRAME_Y,
-        FRAME_X + FRAME_WIDTH - 1,
-        FRAME_Y + FRAME_SIZE - 1,
-        5
-    )
-
-    -- LEFT
-    rectfill(
-        FRAME_X,
-        FRAME_Y,
-        FRAME_X + FRAME_SIZE - 1,
-        SCREEN_HEIGHT - 1,
-        5
-    )
-
-    -- RIGHT
-    rectfill(
-        FRAME_X + FRAME_WIDTH - FRAME_SIZE,
-        FRAME_Y,
-        FRAME_X + FRAME_WIDTH - 1,
-        SCREEN_HEIGHT - 1,
-        5
-    )
-
-end
-
-function draw_game_frame_v3()
-
-    -- TOP
-    rectfill(
-        FRAME_X,
-        FRAME_Y,
-        FRAME_X + FRAME_WIDTH - 1,
-        GAME_Y - 1,
-        5
-    )
-
-    -- LEFT
-    rectfill(
-        FRAME_X,
-        FRAME_Y,
-        FRAME_X + FRAME_SIZE - 1,
-        GAME_BOTTOM,
-        5
-    )
-
-    -- RIGHT
-    rectfill(
-        FRAME_X + FRAME_WIDTH - FRAME_SIZE,
-        FRAME_Y,
-        FRAME_X + FRAME_WIDTH - 1,
-        GAME_BOTTOM,
-        5
-    )
-
 end
 
 function draw_game_frame()
@@ -1396,8 +1408,9 @@ function check_ball_paddle(ball)
 		if has_powerup(POWERUP_CATCH) then
 		   ball.stuck = true
 			ball.x = ball.x - pad.x
+			--pad.stuck_catch = ball.x - pad.x
 			return
-		end		
+		end	
 		
 		-- Calculate the impact position (0 = left, 1 = right)
 		local hit = (ball.x - pad.x) / pad.width
@@ -1430,7 +1443,7 @@ function check_ball_bricks(ball)
 			and ball.y + ball.r >= brick.y
 			and ball.y - ball.r <= brick.y + brick.height then
 			
-			hit_brick_v3(brick,ball)
+			hit_brick(brick,ball)
 			sfx(3)
 			return
 		
@@ -1478,91 +1491,16 @@ function check_bullet_bricks(bullet)
 
 end
 
-function hit_brick(brick)
-
-	damage_brick(brick)
-	
-	local from_left   = ball.old_x + ball.r <= brick.x
-	local from_right  = ball.old_x - ball.r >= brick.x + brick.width
-	local from_top    = ball.old_y + ball.r <= brick.y
-	local from_bottom = ball.old_y - ball.r >= brick.y + brick.height
-
-	if from_left or from_right then
-		ball.dx = -ball.dx
-	else
-		ball.dy = -ball.dy
-	end
-	
-	if brick.type == 9 or brick.type == 10 then
-		brick.flash = BRICK_FLASH
-	end 
-
-end
-
-
-function hit_brick_v2(brick)
-	
-	-- Damage the brick
-	if brick.hits > 0 then
-		brick.hits -= 1
-		
-		if brick.hits == 0 then
-			brick.alive = false
-			score += brick.score
-			remaining_bricks -= 1
-			if remaining_bricks == 0 then
-        		next_round()
-        	end
-        	spawn_pill(brick.x,brick.y,POWERUP_SLOW)
-		end
-	end
-	
-	-- Calculate overlap on each axis
-	local overlap_left   = (ball.x + ball.r) - brick.x
-	local overlap_right  = (brick.x + brick.width) - (ball.x - ball.r)
-	local overlap_top    = (ball.y + ball.r) - brick.y
-	local overlap_bottom = (brick.y + brick.height) - (ball.y - ball.r)
-	
-	local overlap_x = min(overlap_left, overlap_right)
-	local overlap_y = min(overlap_top, overlap_bottom)
-	
-	-- Bounce on the axis with the smallest overlap
-	if overlap_x < overlap_y then
-	
-		ball.dx = -ball.dx
-		
-		-- Move the ball outside the brick
-		if ball.dx > 0 then
-			ball.x = brick.x - ball.r
-		else
-			ball.x = brick.x + brick.width + ball.r
-		end
-	
-	else
-	
-		ball.dy = -ball.dy
-		
-		-- Move the ball outside the brick
-		if ball.dy > 0 then
-			ball.y = brick.y - ball.r
-		else
-			ball.y = brick.y + brick.height + ball.r
-		end
-	
-	end
-
-end
-
 
 function spawn_random_pill(x,y)
 	if rnd() < POWERUP_DROP_CHANCE then
 		local powerup = flr(rnd(#powerup_types)) + 1
-		--spawn_pill(x,y,POWERUP_DISRUPTION)
-		spawn_pill(x,y,powerup)
+		spawn_pill(x,y,POWERUP_CATCH)
+		--spawn_pill(x,y,powerup)
 	end
 end
 
-function hit_brick_v3(brick,ball)
+function hit_brick(brick,ball)
     damage_brick(brick)
 
     -- Mega Ball does not bounce on destructible bricks
@@ -1652,7 +1590,7 @@ function next_round()
 
     if round > #levels then
         -- Game completed
-        --change_state(game_completed_state)
+        change_state(gamecompleted_state)
         return
     end
 
@@ -1769,14 +1707,17 @@ end
 function activate_powerup(kind, duration)
 	active_powerups[kind] = duration
 	if kind == POWERUP_SLOW then
-	    --set_ball_speed(BALL_SPEED_SLOW)
 	    ball.speed = BALL_SPEED_SLOW
 	    return
 	end 
 	if kind == POWERUP_ENLARGE then
 	    pad.width = PADDLE_WIDTH_LARGE
 	    return
-	end        
+	end  
+	if kind == POWERUP_CATCH then
+	    --ball.stuck = true
+	    return
+	end 	      
 	if kind == POWERUP_PLAYER then
 	    lives += 1
 	    active_powerups[kind] = 60
@@ -1806,14 +1747,17 @@ end
 function deactivate_powerup(kind, duration)
 	active_powerups[kind] = nil
 	if kind == POWERUP_SLOW then
-		--set_ball_speed(BALL_SPEED_NORMAL)
 		ball.speed = BALL_SPEED_NORMAL
 		return
 	end 
 	if kind == POWERUP_ENLARGE then
 		pad.width = PADDLE_WIDTH
 		return
-	end     
+	end   
+	if kind == POWERUP_CATCH then
+	    --ball.stuck = false
+	    return
+	end 	      	  
 	if kind == POWERUP_MEGA then
 		megaball(false)
 		return
@@ -1842,8 +1786,7 @@ function megaball(active)
 end
 
 function draw_active_powerups()
-
-	local x = HUD_X + 8
+	local x = HUD_X + 12
 	local y = HUD_Y + 160
 	
 	for powerup,time in pairs(active_powerups) do
@@ -1857,7 +1800,7 @@ function draw_active_powerups()
 			spr(p.sprites[1], x, y)
 			palt()
 			--print(p.name.." ("..flr(time/60)..")", x + 20, y + 2, p.color)
-			print (p.name, x + 20, y + 2, p.color)
+			font_print (p.name, x + 20, y + 1, p.color)
 		end
 		
 		y += 12
