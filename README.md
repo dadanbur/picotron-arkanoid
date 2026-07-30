@@ -6,7 +6,7 @@
 
 A faithful remake of the **Arkanoid** arcade classic built with **Picotron** using **Lua**.
 
-The project focuses on recreating the look, feel and gameplay of the original arcade while keeping the code clean and easy to understand.
+The project aims to recreate the look, feel and gameplay of the original arcade while keeping the code clean, modular and easy to understand.
 
 ## Features
 
@@ -21,39 +21,60 @@ The project focuses on recreating the look, feel and gameplay of the original ar
   - Extra Life
   - Catch
   - Enlarge Paddle
+  - Reduce Paddle
   - Mega Ball
   - Multi Ball
+  - Disruption
   - Laser
   - Break
-- Animated paddle
+- Multiple simultaneous balls
+- Paddle animation
 - Laser weapon
+- Mega Ball
 - Particle effects
 - Screen shake
 - Animated power-up capsules
+- Power-up timers and visual indicators
 - Retro HUD inspired by the original arcade
 - Level transition screens
+- Stage Clear screen
+- Game Over screen
+- Original retro-inspired graphics and effects
+- Custom Arkanoid-style title screen
 
 ## Controls
 
-| Key | Action |
-|------|--------|
-| Left / Right | Move paddle |
-| X | Launch ball / Fire lasers |
-| Esc | Quit |
+| Key          | Action                    |
+| ------------ | ------------------------- |
+| Left / Right | Move paddle               |
+| X            | Launch ball / Fire lasers |
+| Esc          | Quit                      |
 
 ## Running
 
 Open the cartridge with **Picotron** and run it.
+
+The game is designed for the **Picotron** fantasy console and is written entirely in Lua.
 
 ## Technical Highlights
 
 - Written entirely in Lua
 - Text-based level definitions
 - Collision and ball deflection system
-- Particle engine
-- Power-up framework
 - Multiple simultaneous balls
-- Modular game systems (work in progress)
+- Power-up framework
+- Paddle and ball state management
+- Particle system
+- Screen shake effects
+- Animated sprites and effects
+- Modular game state system
+- Retro-inspired HUD and game presentation
+
+## Project Status
+
+The game is fully playable and the main gameplay systems are implemented.
+
+The current focus is on polishing the presentation, improving the arcade experience and completing the remaining non-gameplay features.
 
 ## Roadmap
 
@@ -61,14 +82,17 @@ Open the cartridge with **Picotron** and run it.
 - [x] Ball physics
 - [x] Brick collision
 - [x] 15 levels
+- [x] Multiple brick types
 - [x] HUD
 - [x] Power-ups
 - [x] Multi-ball
 - [x] Laser
+- [x] Mega Ball
 - [x] Particle effects
-- [x] Game Over screen
+- [x] Screen shake
+- [ ] Game Over screen
 - [x] Stage Clear screen
-- [ ] Title screen
+- [x] Title screen
 - [ ] Music
 - [ ] High score table
 - [ ] Enemy stages
@@ -77,6 +101,10 @@ Open the cartridge with **Picotron** and run it.
 ## Acknowledgements
 
 Inspired by **Arkanoid** (Taito, 1986).
+
+This project was developed as a learning exercise and as a tribute to one of the classic arcade games.
+
+The project was also inspired by the **Pico-8 Arkanoid tutorial by Krystman**, adapted and implemented for **Picotron** using Lua.
 
 This is a non-commercial fan project created for learning and for the love of retro games.
 
