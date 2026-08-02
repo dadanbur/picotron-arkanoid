@@ -1,0 +1,339 @@
+--[[pod_format="raw",created="2026-08-01 08:05:32",modified="2026-08-01 08:16:15",revision=5]]
+BRICK_EMPTY		= "0"
+BRICK_WHITE		= "1"
+BRICK_ORANGE		= "2"
+BRICK_CYAN		= "3"
+BRICK_GREEN		= "4"
+BRICK_RED			= "5"
+BRICK_BLUE		= "6"
+BRICK_VIOLET		= "7"
+BRICK_YELLOW	= "8"
+BRICK_SILVER		= "S"
+BRICK_GOLD		= "G"
+
+brick_types = {
+    [BRICK_WHITE]		= { col = 7,  type = 1,  score = 50,  hits = 1 }, -- White
+    [BRICK_ORANGE]		= { col = 9,  type = 2,  score = 60,  hits = 1 }, -- Orange
+    [BRICK_CYAN] 		= { col = 28, type = 3,  score = 70,  hits = 1 }, -- Cyan
+    [BRICK_GREEN] 		= { col = 11, type = 4,  score = 90,  hits = 1 }, -- Green
+    [BRICK_RED] 		= { col = 8,  type = 5,  score = 100, hits = 1 }, -- Red
+    [BRICK_BLUE] 		= { col = 16, type = 6,  score = 100, hits = 1 }, -- Blue
+    [BRICK_VIOLET] 	= { col = 30, type = 7,  score = 100, hits = 1 }, -- Violet
+    [BRICK_YELLOW] 	= { col = 10, type = 8,  score = 50,  hits = 1 }, -- Yellow
+    [BRICK_SILVER] 	= { col = 6,  type = 9,  score = 50,  hits = 2 }, -- Silver
+    [BRICK_GOLD] 		= { col = 25,  type = 10, score = 0,   hits = -1 } -- Gold
+}
+
+remaining_bricks = 0
+bricks={}  
+
+function create_level(level_index)
+	bricks = {}
+	remaining_bricks = 0
+	local level = levels[level_index]
+	
+	for row = 1, #level do
+		local level_line = level[row]
+		
+		for col = 1, #level_line do
+		
+			local elem = sub(level_line, col, col)
+			
+			-- Empty brick
+			if elem ~= BRICK_EMPTY then			
+				local data = brick_types[elem]
+				if data then
+					create_brick(data,col,row)
+					-- Count only breakable bricks
+					if data.hits > 0 then
+						remaining_bricks += 1
+					end			
+				end
+			end
+		end
+	end
+	
+end
+
+function draw_bricks_shadow()
+	local shadow_size = 3
+	for brick in all(bricks) do
+		if brick.alive then	
+			-- Brick body
+			rectfill(
+				brick.x + shadow_size,
+				brick.y + shadow_size,
+				brick.x + brick.width + shadow_size*2,
+				brick.y + brick.height + shadow_size*2,
+				shadow_color
+			)		
+		end
+	end
+
+end
+
+
+function draw_bricks()
+	for brick in all(bricks) do
+		if brick.alive then
+	
+			-- Brick body
+			rectfill(
+				brick.x,
+				brick.y,
+				brick.x + brick.width,
+				brick.y + brick.height,
+				brick.col
+			)
+
+			if brick.flash > 0 then
+    			draw_brick_flash(brick)
+			end	
+			
+			-- Bottom outline
+			line(
+				brick.x,
+				brick.y + brick.height,
+				brick.x + brick.width,
+				brick.y + brick.height,
+				0
+			)
+			
+			-- Right outline
+			line(
+				brick.x + brick.width,
+				brick.y,
+				brick.x + brick.width,
+				brick.y + brick.height,
+				0
+			)			
+							
+			-- Silver highlights
+			if brick.type == 9 then
+				draw_silver_brick(brick)
+			end
+			-- Golden highlights
+			if brick.type == 10 then
+				draw_gold_brick(brick)
+			end
+		
+		end
+	end
+
+end
+
+function draw_brick_flash(brick)
+
+    local phase = 3 - flr(brick.flash / (BRICK_FLASH / 3))
+    local t = (BRICK_FLASH - brick.flash) % (BRICK_FLASH / 3)
+    t /= (BRICK_FLASH / 3)
+
+    if phase == 0 then
+
+        local x = brick.x + brick.width * t
+        local y = brick.y + brick.height * t
+
+        line(x,
+             brick.y + brick.height,
+             brick.x + brick.width,
+             brick.y + brick.height,
+             7)
+
+        line(brick.x + brick.width,
+             y,
+             brick.x + brick.width,
+             brick.y + brick.height,
+             7)
+
+    elseif phase == 1 then
+
+        rectfill(
+            brick.x,
+            brick.y,
+            brick.x + brick.width,
+            brick.y + brick.height,
+            7
+        )
+
+    else
+
+        local x = brick.x + brick.width * (1 - t)
+        local y = brick.y + brick.height * (1 - t)
+
+        line(
+            brick.x,
+            brick.y,
+            x,
+            brick.y,
+            7
+        )
+
+        line(
+            brick.x,
+            brick.y,
+            brick.x,
+            y,
+            7
+        )
+
+    end
+
+end
+
+
+function draw_silver_brick(brick)
+	-- Top highlight
+	line(
+		brick.x,
+		brick.y,
+		brick.x + brick.width - 1,
+		brick.y,
+		7
+	)
+
+	-- Left highlight
+	line(
+		brick.x,
+		brick.y,
+		brick.x,
+		brick.y + brick.height - 1,
+		7
+	)
+	
+	-- Bottom shadow
+	line(
+		brick.x,
+		brick.y + brick.height - 1,
+		brick.x + brick.width - 1,
+		brick.y + brick.height - 1,
+		22
+	)
+	
+	-- Right shadow
+	line(
+		brick.x + brick.width - 1,
+		brick.y,
+		brick.x + brick.width - 1,
+		brick.y + brick.height - 1,
+		22
+	)
+end
+
+function draw_gold_brick(brick)
+	-- Top highlight
+	line(
+		brick.x,
+		brick.y,
+		brick.x + brick.width - 1,
+		brick.y,
+		10
+	)
+
+	-- Left highlight
+	line(
+		brick.x,
+		brick.y,
+		brick.x,
+		brick.y + brick.height - 1,
+		10
+	)
+	
+	-- Bottom shadow
+	line(
+		brick.x,
+		brick.y + brick.height - 1,
+		brick.x + brick.width - 1,
+		brick.y + brick.height - 1,
+		4
+	)
+	
+	-- Right shadow
+	line(
+		brick.x + brick.width - 1,
+		brick.y,
+		brick.x + brick.width - 1,
+		brick.y + brick.height - 1,
+		4
+	)
+end
+
+function update_bricks()
+	for brick in all(bricks) do
+		if brick.flash > 0 then
+			brick.flash -= 1
+		end
+	end
+end
+
+function damage_brick(brick)
+	if brick.hits > 0 then
+		brick.hits -= 1
+		
+		if brick.hits == 0 then
+			brick.alive = false
+			score += brick.score
+			remaining_bricks -= 1
+			if remaining_bricks == 0 then
+        		next_level()
+        	end
+        	spawn_random_pill(brick.x,brick.y)
+		end
+	end
+end
+
+function hit_brick(brick,ball)
+    damage_brick(brick)
+
+    -- Mega Ball does not bounce on destructible bricks
+    if ball.mega and brick.hits >= 0 then
+    	return
+    end
+
+    local from_left   = ball.old_x + ball.r <= brick.x
+    local from_right  = ball.old_x - ball.r >= brick.x + brick.width
+    local from_top    = ball.old_y + ball.r <= brick.y
+    local from_bottom = ball.old_y - ball.r >= brick.y + brick.height
+
+    if from_left then
+        ball.dx = -ball.dx
+        ball.x = brick.x - ball.r
+    elseif from_right then
+        ball.dx = -ball.dx
+        ball.x = brick.x + brick.width + ball.r
+    elseif from_top then
+        ball.dy = -ball.dy
+        ball.y = brick.y - ball.r
+    elseif from_bottom then
+        ball.dy = -ball.dy
+        ball.y = brick.y + brick.height + ball.r
+    else
+        -- Fallback: bola ya dentro del ladrillo (esquina, alta velocidad)
+        -- Usar el eje con menor solapamiento
+        local ox = min((ball.x + ball.r) - brick.x, (brick.x + brick.width) - (ball.x - ball.r))
+        local oy = min((ball.y + ball.r) - brick.y, (brick.y + brick.height) - (ball.y - ball.r))
+        if ox < oy then
+            ball.dx = -ball.dx
+        else
+            ball.dy = -ball.dy
+        end
+    end
+
+    if brick.type == 9 or brick.type == 10 then
+        brick.flash = BRICK_FLASH
+    end
+end
+
+function create_brick(data,col,row)
+	add(bricks, {
+		x = BRICKS_X + (col - 1) * (BRICK_WIDTH + BRICK_SPACING_X),
+		y = BRICKS_Y + (row - 1) * (BRICK_HEIGHT + BRICK_SPACING_Y),
+		width  = BRICK_WIDTH,
+		height = BRICK_HEIGHT,
+		col   = data.col,
+		type  = data.type,
+		score = data.score,
+		hits  = data.hits,
+		flash = 0,
+		alive = true
+	})					
+end
