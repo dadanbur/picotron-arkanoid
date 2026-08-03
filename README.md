@@ -1,7 +1,7 @@
 # Picotron Arkanoid
 
 <p align="center">
-  <img src="img/Arkanoid-white-banner.png" alt="Picotron Arkanoid Banner">
+  <img src="img/Arkanoid-black-banner-v2.png" alt="Picotron Arkanoid Banner">
 </p>
 
 A faithful remake of the **Arkanoid** arcade classic built with **Picotron** using **Lua**.
@@ -21,26 +21,11 @@ The project aims to recreate the look, feel and gameplay of the original arcade 
   - Extra Life
   - Catch
   - Enlarge Paddle
-  - Reduce Paddle
   - Mega Ball
   - Multi Ball
   - Disruption
   - Laser
   - Break
-- Multiple simultaneous balls
-- Paddle animation
-- Laser weapon
-- Mega Ball
-- Particle effects
-- Screen shake
-- Animated power-up capsules
-- Power-up timers and visual indicators
-- Retro HUD inspired by the original arcade
-- Level transition screens
-- Stage Clear screen
-- Game Over screen
-- Original retro-inspired graphics and effects
-- Custom Arkanoid-style title screen
 
 ## Controls
 
@@ -78,21 +63,7 @@ The current focus is on polishing the presentation, improving the arcade experie
 
 ## Roadmap
 
-- [x] Paddle movement
-- [x] Ball physics
-- [x] Brick collision
-- [x] 15 levels
-- [x] Multiple brick types
-- [x] HUD
-- [x] Power-ups
-- [x] Multi-ball
-- [x] Laser
-- [x] Mega Ball
-- [x] Particle effects
-- [x] Screen shake
-- [ ] Game Over screen
-- [x] Stage Clear screen
-- [x] Title screen
+- [ ] Add more levels
 - [ ] Music
 - [ ] High score table
 - [ ] Enemy stages
