@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:06:58",modified="2026-08-02 18:28:34",revision=14]]
+--[[pod_format="raw",created="2026-08-01 08:06:58",modified="2026-08-03 09:31:33",revision=23]]
 ----------------------------------------------------------------------
 -- POWERUPS
 ----------------------------------------------------------------------
@@ -11,7 +11,8 @@
 --   draw_active_powerups() -> renders HUD powerup indicators
 ----------------------------------------------------------------------
 
-POWERUP_DROP_CHANCE = 0.25
+POWERUP_DROP_CHANCE = 0.12
+POWERUP_DEMO_DROP_CHANCE = 0.12
 
 POWERUP_NONE			= 0
 POWERUP_SLOW			= 1
@@ -22,7 +23,7 @@ POWERUP_MEGA			= 5
 POWERUP_DISRUPTION	= 6
 POWERUP_LASER			= 7
 POWERUP_BREAK			= 8
-POWERUP_DEMO			= POWERUP_LASER
+POWERUP_DEMO			= POWERUP_MEGA
 
 powerup_types = {
     [POWERUP_SLOW] = { 
@@ -104,13 +105,25 @@ active_powerups = {}
 
 
 function spawn_random_pill(x,y)
-	if rnd() < POWERUP_DROP_CHANCE then
-		local powerup = flr(rnd(#powerup_types)) + 1
-		if demo_mode then
-			spawn_pill(x,y,POWERUP_DEMO)
-		else
+
+	if rnd(1) > POWERUP_DROP_CHANCE and not demo_mode then
+		return
+	end
+
+	local powerup = flr(rnd(#powerup_types)) + 1
+	
+	if (powerup == POWERUP_BREAK or powerup == POWERUP_PLAYER) and rnd(1) < 0.5 then
+		powerup = flr(rnd(#powerup_types)) + 1
+	end 
+	
+	if demo_mode then
+		if POWERUP_DEMO == POWERUP_NONE then
 			spawn_pill(x,y,powerup)
+		else 
+			spawn_pill(x,y,POWERUP_DEMO)
 		end
+	else
+		spawn_pill(x,y,powerup)
 	end
 end
 

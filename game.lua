@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:20:22",modified="2026-08-03 06:16:38",revision=54]]
+--[[pod_format="raw",created="2026-08-01 08:20:22",modified="2026-08-03 10:06:07",revision=98]]
 ----------------------------------------------------------------------
 -- GAME
 ----------------------------------------------------------------------
@@ -9,7 +9,7 @@
 -- Util:   check_collision() (AABB test shared across entities)
 ----------------------------------------------------------------------
 
-demo_mode = true
+demo_mode = false
 
 function start_game()
     lives = 3
@@ -19,6 +19,7 @@ function start_game()
     
     if demo_mode then
     	lives = 300
+    	round = 1
     end
     change_state(intro_state)
 end
@@ -267,12 +268,14 @@ for i=1,500 do
 	local x=STARFIELD_X + flr(rnd(STARFIELD_WIDTH))
 	local y=STARFIELD_Y + flr(rnd(STARFIELD_HEIGHT))
 	local s=rnd(1.5) + 0.5
-	--local size = flr(rnd(4))
+	local size = flr(rnd(4))
 	add(starfield,{x=x,y=y,speed=s,size=size})
 end
 
 function draw_starfield()
 	local star_colors = {57, 58, 59, 60}
+	--local star_colors = {7, 6, 36, 35, 5}
+	--local star_colors = {38, 12, 16, 50}
 
 	for star in all(starfield) do
 		local x = star.x
@@ -302,6 +305,9 @@ function update_starfield()
 		if (star.y < 0) then
 			star.y = STARFIELD_Y
 			star.x = STARFIELD_X + flr(rnd(STARFIELD_WIDTH))
+			star.s=rnd(1.5) + 0.5
+			star.size = flr(rnd(4))
+
 		end	
 	end
 end

@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:00:00",modified="2026-08-02 21:22:38",revision=27]]
+--[[pod_format="raw",created="2026-08-01 08:00:00",modified="2026-08-03 09:31:57",revision=28]]
 ----------------------------------------------------------------------
 -- STATE MACHINE
 ----------------------------------------------------------------------
@@ -242,7 +242,7 @@ function round_draw()
 end
 
 function round_update()
-	gameplay_update()
+	--gameplay_update()
 	
 	round_timer -= 1
 	if round_timer <= 0 then
