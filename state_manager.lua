@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:00:00",modified="2026-08-03 09:31:57",revision=28]]
+--[[pod_format="raw",created="2026-08-01 08:00:00",modified="2026-08-03 14:54:20",revision=43]]
 ----------------------------------------------------------------------
 -- STATE MACHINE
 ----------------------------------------------------------------------
@@ -130,9 +130,9 @@ function intro_draw()
 	
 	spr(136,1,60)
 	
-	if (intro_timer // 10) % 2 == 0 then
-		font_print("PRESS X KEY TO START",165,180,6)
-	end
+	--if (intro_timer // 10) % 2 == 0 then
+		font_print("PRESS X KEY TO START",165,180,8)
+	--end
 	
 	print(VERSION,SCREEN_WIDTH-#VERSION*5-4,SCREEN_HEIGHT-12,5)
 end
@@ -143,7 +143,7 @@ function intro_update()
 	if btnp(5) then
 		change_state(round_state)
 	end
-	update_starfield()
+	--update_starfield()
 end
 
 intro_state = {

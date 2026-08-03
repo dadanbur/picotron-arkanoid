@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:05:32",modified="2026-08-03 09:28:43",revision=19]]
+--[[pod_format="raw",created="2026-08-01 08:05:32",modified="2026-08-03 16:14:23",revision=20]]
 ----------------------------------------------------------------------
 -- BRICKS
 ----------------------------------------------------------------------
@@ -32,7 +32,7 @@ brick_types = {
     [BRICK_VIOLET] 	= { col = 30, type = 7,  score = 100, hits = 1 }, -- Violet
     [BRICK_YELLOW] 	= { col = 10, type = 8,  score = 50,  hits = 1 }, -- Yellow
     [BRICK_SILVER] 	= { col = 6,  type = 9,  score = 50,  hits = 2 }, -- Silver
-    [BRICK_GOLD] 		= { col = 25,  type = 10, score = 0,   hits = -1 } -- Gold
+    [BRICK_GOLD] 		= { col = 25, type = 10, score = 0,   hits = -1 } -- Gold
 }
 
 remaining_bricks = 0
