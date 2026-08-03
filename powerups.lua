@@ -1,4 +1,16 @@
---[[pod_format="raw",created="2026-08-01 08:06:58",modified="2026-08-01 08:17:28",revision=5]]
+--[[pod_format="raw",created="2026-08-01 08:06:58",modified="2026-08-02 18:28:34",revision=14]]
+----------------------------------------------------------------------
+-- POWERUPS
+----------------------------------------------------------------------
+-- Powerup catalogue, pill entities, and active-effect management.
+--   powerup_types        -> map from powerup id to name/sprite/color
+--   spawn_random_pill()  -> drops a pill from a destroyed brick
+--   activate_powerup()   -> applies effect (speed, size, laser, etc.)
+--   deactivate_powerup() -> reverts effect when timer expires
+--   update_powerups()    -> ticks down all active powerup durations
+--   draw_active_powerups() -> renders HUD powerup indicators
+----------------------------------------------------------------------
+
 POWERUP_DROP_CHANCE = 0.25
 
 POWERUP_NONE			= 0
@@ -216,11 +228,12 @@ function activate_powerup(kind, duration)
 	if kind == POWERUP_LASER then
 		pad.laser = true
 		pad.sprite = PADDLE_SPRITE_LASER
+		pad.animation = PADDLE_ANIMATION_LASER
 		return
 	end                 
 end
 
-function deactivate_powerup(kind, duration)
+function deactivate_powerup(kind)
 	active_powerups[kind] = nil
 	if kind == POWERUP_SLOW then
 		slowball(false)
@@ -241,8 +254,15 @@ function deactivate_powerup(kind, duration)
 	if kind == POWERUP_LASER then
 		pad.laser = false
 		pad.sprite = PADDLE_SPRITE
+		pad.animation = PADDLE_ANIMATION
 		return
 	end 	   
+end
+
+function deactivate_all_powerups()
+	for powerup in pairs(active_powerups) do
+		deactivate_powerup(powerup)
+	end		   
 end
 
 function slowball(active)

@@ -1,4 +1,14 @@
---[[pod_format="raw",created="2026-08-01 08:02:45",modified="2026-08-01 08:16:41",revision=2]]
+--[[pod_format="raw",created="2026-08-01 08:02:45",modified="2026-08-02 19:58:20",revision=4]]
+----------------------------------------------------------------------
+-- FONT
+----------------------------------------------------------------------
+-- Sprite-based bitmap font for the game HUD and UI screens.
+--   FONT             -> descriptor table (sprite index, char set, widths)
+--   init_font()      -> builds char-to-sprite-index lookup table
+--   font_print()     -> renders a string via sspr with palette swap
+--   next_text_color() -> cycles through the title animation color sequence
+----------------------------------------------------------------------
+
 FONT = {
     sprite = 56,
     width = 8,
@@ -44,6 +54,18 @@ function font_print(text, x, y, col)
 		
 		end	
 	end
+end
+
+function font_width(text)
+
+	local width = 0
+
+	for i = 1, #text do
+		local c = sub(text, i, i)
+		width += FONT.widths[c] or FONT.spacing
+	end
+
+	return width
 end
 
 local text_anim = {5,5,5,5,5,5,5,5,5,5,5,6,6,7,7,6,6,5}

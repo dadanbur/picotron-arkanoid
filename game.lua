@@ -1,4 +1,16 @@
---[[pod_format="raw",created="2026-08-01 08:20:22",modified="2026-08-01 08:36:20",revision=6]]
+--[[pod_format="raw",created="2026-08-01 08:20:22",modified="2026-08-03 06:16:38",revision=54]]
+----------------------------------------------------------------------
+-- GAME
+----------------------------------------------------------------------
+-- Game flow, scene rendering, and background effects.
+-- Flow:   start_game(), init_level(), next_level(), next_round()
+-- Render: draw_game_frame(), draw_game_area(), draw_hud_score()
+-- FX:     starfield (parallax background used in intro_state)
+-- Util:   check_collision() (AABB test shared across entities)
+----------------------------------------------------------------------
+
+demo_mode = true
+
 function start_game()
     lives = 3
     score = 0
@@ -14,6 +26,7 @@ end
 function init_level()
 	ball.stuck = true
 	
+	deactivate_all_powerups()
 	active_powerups = {}
 	pills = {}
 	bricks = {}
@@ -119,6 +132,21 @@ end
 
 function draw_borders_shadow()
 	local shadow_size = 6
+	local shadow_color = levels[round].shadow_color or SHADOW_COLOR
+
+--[[
+poke(0x550b, 0x3f)
+fillp(
+	0b11101110,
+	0b10111011,
+	0b11101110,
+	0b10111011,
+	0b11101110,
+	0b10111011,
+	0b11101110,
+	0b10111011
+)
+]]
 	
 	-- left inner shadow
 	rectfill(
@@ -126,7 +154,7 @@ function draw_borders_shadow()
 		GAME_Y,
 		GAME_X + shadow_size - 1,
 		GAME_BOTTOM,
-		shadow_color
+		shadow_color,0
 	)
 	
 	-- top inner shadow
@@ -137,6 +165,9 @@ function draw_borders_shadow()
 		GAME_Y + shadow_size - 1,
 		shadow_color
 	)
+
+--fillp()
+--poke(0x550b, 0x00)
 
 end
 
@@ -150,19 +181,32 @@ function draw_game_area()
    )
 	local tile_w = 23
 	local tile_h = 16
+		
+	local background = levels[round].background or 192
+
+	local tile_w = get_spr(background):width()
+	local tile_h = get_spr(background):height()
+	
 	
 	local cols = flr((GAME_WIDTH + tile_w - 1) / tile_w)
 	local rows = flr((GAME_HEIGHT + tile_h - 1) / tile_h)
+
+	-- Clip drawing to the game area
+	clip( GAME_X, GAME_Y, GAME_WIDTH, GAME_HEIGHT )	
 	
 	for y = 0, rows - 1 do
 		for x = 0, cols - 1 do
 			spr(
-				192,
-				GAME_X + x * tile_w - 8,
+				background,
+				GAME_X + x * tile_w,
 				GAME_Y + y * tile_h
 			)
 		end
-	end    
+	end 
+	
+	-- Restore full screen clipping 
+	clip()
+	   
    draw_borders_shadow() 
 end
 

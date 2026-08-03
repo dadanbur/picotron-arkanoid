@@ -1,5 +1,13 @@
---[[pod_format="raw",created="2026-08-01 07:55:13",modified="2026-08-01 08:06:40",revision=3]]
-demo_mode = true
+--[[pod_format="raw",created="2026-08-01 07:55:13",modified="2026-08-02 20:08:13",revision=13]]
+----------------------------------------------------------------------
+-- CONFIG
+----------------------------------------------------------------------
+-- Global constants: screen/playfield dimensions, frame/HUD geometry,
+-- sprite indices, brick/ball/paddle sizes, and color values.
+-- All values are read-only at runtime.
+----------------------------------------------------------------------
+
+VERSION = "v0.1.0-beta"
 
 SCREEN_WIDTH  = 480
 SCREEN_HEIGHT = 270
@@ -43,7 +51,10 @@ PADDLE_HEIGHT = 8
 PADDLE_BOTTOM_MARGIN = 18
 PADDLE_SPRITE = 8
 PADDLE_SPRITE_LASER = 16
-
+PADDLE_ANIMATION = {8, 9, 10, 9}
+PADDLE_ANIMATION_LASER = {16, 17, 18, 17}
+PADDLE_ANIMATION_SPEED = 3
+	
 BRICK_WIDTH  = 16
 BRICK_HEIGHT = 8
 BRICK_SPACING_X = 1
@@ -57,7 +68,8 @@ BALL_SPEED_NORMAL = 2.5
 BALL_SPEED_SLOW   = 1.5
 BALL_SPRITE = 1
 BALL_SPRITE_MEGA = 2
+BALL_DIAG = 1 / sqrt(2)
 
 SPR_PILL_SHADOW = 48
 
-shadow_color = 40
+SHADOW_COLOR = 40

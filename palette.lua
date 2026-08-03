@@ -1,4 +1,15 @@
---[[pod_format="raw",created="2026-07-27 00:04:05",modified="2026-07-30 18:00:45",revision=25]]
+--[[pod_format="raw",created="2026-07-27 00:04:05",modified="2026-08-01 09:19:02",revision=26]]
+----------------------------------------------------------------------
+-- PALETTE
+----------------------------------------------------------------------
+-- Custom 64-color palette setup and Picotron IPC sync.
+--   init_palette()   -> loads hex colors into Picotron memory (poke4)
+--                       and broadcasts the palette to gfx/map editors
+--   set_color()      -> writes one RGBA entry at address 0x5000 + 4*c
+--   send_palette()   -> sends palette userdata to gfx and map PIDs
+--   hex_to_decimal() -> parses a 6-digit hex string to an integer
+----------------------------------------------------------------------
+
 function init_palette()
 
 	PALETTE={

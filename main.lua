@@ -1,4 +1,14 @@
---[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-08-01 08:29:48",revision=820]]
+--[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-08-01 09:16:19",revision=821]]
+----------------------------------------------------------------------
+-- MAIN
+----------------------------------------------------------------------
+-- Picotron cartridge entry point.
+-- Includes all modules and defines the three engine callbacks:
+--   _init()   -> one-time startup: palette, font, initial state
+--   _update() -> per-frame logic  (delegates to state_manager)
+--   _draw()   -> per-frame render (delegates to state_manager)
+----------------------------------------------------------------------
+
 ------------------------------------------------------------
 -- INCLUDES
 ------------------------------------------------------------

@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:00:00",modified="2026-08-01 08:36:13",revision=2]]
+--[[pod_format="raw",created="2026-08-01 08:00:00",modified="2026-08-02 21:22:38",revision=27]]
 ----------------------------------------------------------------------
 -- STATE MACHINE
 ----------------------------------------------------------------------
@@ -35,14 +35,6 @@ function draw_state()
 	state_manager.current.draw()
 end
 
-function _update()
-   update_state()
-end
-
-function _draw()
-	draw_state()
-end
-
 
 ----------------------------------------------------------------------
 -- GAMEPLAY STATE
@@ -62,6 +54,17 @@ function gameplay_draw()
     draw_pad()
     draw_bullets()
     draw_pills()
+    draw_game_frame()
+    draw_hud()
+    draw_hud_score()
+end
+
+function gameplay_ready_draw()
+    draw_background()
+    draw_left_margin()
+    draw_game_area()
+    draw_bricks_shadow()
+    draw_bricks()
     draw_game_frame()
     draw_hud()
     draw_hud_score()
@@ -130,6 +133,8 @@ function intro_draw()
 	if (intro_timer // 10) % 2 == 0 then
 		font_print("PRESS X KEY TO START",165,180,6)
 	end
+	
+	print(VERSION,SCREEN_WIDTH-#VERSION*5-4,SCREEN_HEIGHT-12,5)
 end
 
 function intro_update()
@@ -219,18 +224,20 @@ function round_enter()
 end
 
 function round_draw()
-	gameplay_draw()
+	gameplay_ready_draw()
 	local text = "ROUND "..round
-	local x = GAME_X + (GAME_WIDTH - #text * 8) / 2
+	local x = GAME_X + (GAME_WIDTH - font_width(text)) / 2
 	local y = GAME_Y + GAME_HEIGHT / 2 + 40
 
 	font_print(text, x, y, 7)
 	
 	text = "READY"
-	x = GAME_X + (GAME_WIDTH - #text * 8) / 2	
+	x = GAME_X + (GAME_WIDTH - font_width(text)) / 2	
 	y += 18
 	
-	font_print(text, x, y, 7)
+	if round_timer <= 60 then
+		font_print(text, x, y, 7)
+	end
 	
 end
 

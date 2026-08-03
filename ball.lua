@@ -1,4 +1,16 @@
---[[pod_format="raw",created="2026-08-01 08:09:35",modified="2026-08-01 08:37:49",revision=6]]
+--[[pod_format="raw",created="2026-08-01 08:09:35",modified="2026-08-02 18:26:06",revision=12]]
+----------------------------------------------------------------------
+-- BALL
+----------------------------------------------------------------------
+-- Ball entity: creation, movement, and collision detection.
+--   create_ball()        -> returns a new ball table at paddle position
+--   update_ball(b)       -> moves ball; handles wall/paddle/brick hits
+--   check_ball_paddle()  -> AABB test with impact-angle steering
+--   check_ball_bricks()  -> AABB test; stops at first hit per frame
+--   multiball()          -> splits one ball into three directions
+--   duplicate_ball()     -> clones a ball preserving speed and state
+----------------------------------------------------------------------
+
 balls={}
 local d = 1 / sqrt(2)
 
@@ -27,7 +39,8 @@ function update_stuck_ball(ball)
 	
 	-- Launch on X
 	if ball.stuck and btnp(5) then
-		ball.dy = -ball.dy
+		--ball.dy = -ball.dy
+		ball.dy = -abs(ball.dy)
 	   ball.stuck = false
 	end
 	
@@ -179,8 +192,8 @@ function create_ball()
 		old_x = 0,
 		old_y = 0,
 		r = 3,
-		dx = d,
-		dy = -d,
+		dx = BALL_DIAG,
+		dy = -BALL_DIAG,
 		sprite = BALL_SPRITE,
 		speed = BALL_SPEED_NORMAL,
 		stuck = true,

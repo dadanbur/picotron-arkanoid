@@ -1,4 +1,15 @@
---[[pod_format="raw",created="2026-08-01 08:01:39",modified="2026-08-01 08:18:05",revision=4]]
+--[[pod_format="raw",created="2026-08-01 08:01:39",modified="2026-08-02 18:06:00",revision=17]]
+----------------------------------------------------------------------
+-- PADDLE
+----------------------------------------------------------------------
+-- Paddle entity: state, rendering, and laser weapon.
+--   pad              -> global paddle table (position, size, speed)
+--   draw_pad()       -> renders paddle body and drop shadow
+--   fire_lasers()    -> spawns a paired laser shot at paddle edges
+--   update_bullets() -> moves bullets upward; checks brick collision
+--   draw_bullets()   -> renders all active bullet sprites
+----------------------------------------------------------------------
+
 pad = {
 	x = GAME_X + (GAME_WIDTH - PADDLE_WIDTH) / 2,
 	y = SCREEN_HEIGHT - (PADDLE_HEIGHT + PADDLE_BOTTOM_MARGIN),
@@ -7,6 +18,8 @@ pad = {
 	speed = 5,
 	friction=1.5,
 	sprite = PADDLE_SPRITE,
+	animation = PADDLE_ANIMATION,
+	frame = 1,
 	dx = 0,
 	laser = false,
 	stuck_catch=0
@@ -20,7 +33,10 @@ function draw_pad()
 	local EDGE_WIDTH = 7
 	local PAD_HEIGHT = 15
 	rectfill(pad.x+EDGE_WIDTH-1,pad.y,pad.x+pad.width-4,pad.y+pad.height-1,0)
-	local pad_sprite = pad.sprite
+	
+	local pad_animation_index = flr(time() * PADDLE_ANIMATION_SPEED) % #pad.animation + 1
+	--local pad_sprite = pad.sprite
+	local pad_sprite = pad.animation[pad_animation_index]
 	
 	palt(1,true)
 	palt(0,false)
@@ -28,7 +44,7 @@ function draw_pad()
 	sspr(pad_sprite,0,0,EDGE_WIDTH,PAD_HEIGHT,pad.x,pad.y)
 	-- Center
 	for x = EDGE_WIDTH+1,pad.width-EDGE_WIDTH-2 do
-		sspr(pad_sprite,EDGE_WIDTH,0,1,PAD_HEIGHT,pad.x+x,pad.y)
+		sspr(pad.sprite,EDGE_WIDTH,0,1,PAD_HEIGHT,pad.x+x,pad.y)
 	end
 	-- Right cap	
 	sspr(pad_sprite,9,0,EDGE_WIDTH,PAD_HEIGHT,pad.x+pad.width-EDGE_WIDTH,pad.y)
@@ -65,29 +81,6 @@ function draw_pad_shadow()
 	sspr(11, 9, 0, EDGE_WIDTH, SPRITE_HEIGHT, shadow_x + pad.width - 4, shadow_y)
 	
 	palt()
-
-end
-
-
-function check_bullet_bricks(bullet)
-
-	for brick in all(bricks) do
-	
-		if brick.alive and
-         bullet.x >= brick.x and
-         bullet.x <= brick.x + brick.width and
-         bullet.y >= brick.y and
-         bullet.y <= brick.y + brick.height then
-			
-			damage_brick(brick)
-			--del(bullets,bullet)
-			sfx(3)
-			return true
-		
-		end
-	end
-
-	return false
 
 end
 

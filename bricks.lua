@@ -1,4 +1,15 @@
---[[pod_format="raw",created="2026-08-01 08:05:32",modified="2026-08-01 08:16:15",revision=5]]
+--[[pod_format="raw",created="2026-08-01 08:05:32",modified="2026-08-02 20:09:25",revision=13]]
+----------------------------------------------------------------------
+-- BRICKS
+----------------------------------------------------------------------
+-- Brick type definitions, level layout, rendering, and hit logic.
+--   brick_types    -> map from level character to brick properties
+--   create_level() -> populates bricks[] from the levels[n] string grid
+--   hit_brick()    -> resolves bounce direction on ball-brick collision
+--   damage_brick() -> reduces hit points; awards score; triggers pill
+--   draw_bricks()  -> renders all bricks with type-specific highlights
+----------------------------------------------------------------------
+
 BRICK_EMPTY		= "0"
 BRICK_WHITE		= "1"
 BRICK_ORANGE		= "2"
@@ -30,7 +41,8 @@ bricks={}
 function create_level(level_index)
 	bricks = {}
 	remaining_bricks = 0
-	local level = levels[level_index]
+	local level = levels[level_index].pattern
+	local bricks_y = GAME_Y + levels[level_index].bricks * 8
 	
 	for row = 1, #level do
 		local level_line = level[row]
@@ -43,7 +55,7 @@ function create_level(level_index)
 			if elem ~= BRICK_EMPTY then			
 				local data = brick_types[elem]
 				if data then
-					create_brick(data,col,row)
+					create_brick(data,col,row,bricks_y)
 					-- Count only breakable bricks
 					if data.hits > 0 then
 						remaining_bricks += 1
@@ -57,6 +69,7 @@ end
 
 function draw_bricks_shadow()
 	local shadow_size = 3
+	local shadow_color = levels[round].shadow_color or SHADOW_COLOR
 	for brick in all(bricks) do
 		if brick.alive then	
 			-- Brick body
@@ -281,7 +294,7 @@ function damage_brick(brick)
 	end
 end
 
-function hit_brick(brick,ball)
+function hit_brick_old(brick,ball)
     damage_brick(brick)
 
     -- Mega Ball does not bounce on destructible bricks
@@ -323,10 +336,78 @@ function hit_brick(brick,ball)
     end
 end
 
-function create_brick(data,col,row)
+function hit_brick(brick, ball)
+	-- Determine collision direction from previous position
+	local from_left = ball.old_x + ball.r <= brick.x
+	local from_right = ball.old_x - ball.r >= brick.x + brick.width
+	local from_top = ball.old_y + ball.r <= brick.y
+	local from_bottom = ball.old_y - ball.r >= brick.y + brick.height
+
+	-- Resolve collision
+	if from_left then
+		ball.x = brick.x - ball.r
+		ball.dx = -abs(ball.dx)
+	elseif from_right then
+		ball.x = brick.x + brick.width + ball.r
+		ball.dx = abs(ball.dx)
+	elseif from_top then
+		ball.y = brick.y - ball.r
+		ball.dy = -abs(ball.dy)
+	elseif from_bottom then
+		ball.y = brick.y + brick.height + ball.r
+		ball.dy = abs(ball.dy)
+	else
+
+		-- Ball is already inside the brick.
+		-- Push it out using the smallest penetration.
+
+		local left = ball.x + ball.r - brick.x
+		local right = brick.x + brick.width - (ball.x - ball.r)
+		local top = ball.y + ball.r - brick.y
+		local bottom = brick.y + brick.height - (ball.y - ball.r)
+
+		local penetration_x = min(left, right)
+		local penetration_y = min(top, bottom)
+
+		if penetration_x < penetration_y then
+
+			if ball.x < brick.x + brick.width / 2 then
+				ball.x = brick.x - ball.r
+				ball.dx = -abs(ball.dx)
+			else
+				ball.x = brick.x + brick.width + ball.r
+				ball.dx = abs(ball.dx)
+			end
+
+		else
+
+			if ball.y < brick.y + brick.height / 2 then
+				ball.y = brick.y - ball.r
+				ball.dy = -abs(ball.dy)
+			else
+				ball.y = brick.y + brick.height + ball.r
+				ball.dy = abs(ball.dy)
+			end
+
+		end
+	end
+
+	-- Damage the brick after resolving the collision
+	if not ball.mega or brick.hits < 0 then
+		damage_brick(brick)
+	end
+
+	-- Flash silver/gold bricks
+	if brick.type == 9 or brick.type == 10 then
+		brick.flash = BRICK_FLASH
+	end
+end
+
+
+function create_brick(data,col,row,bricks_y)
 	add(bricks, {
 		x = BRICKS_X + (col - 1) * (BRICK_WIDTH + BRICK_SPACING_X),
-		y = BRICKS_Y + (row - 1) * (BRICK_HEIGHT + BRICK_SPACING_Y),
+		y = bricks_y + (row - 1) * (BRICK_HEIGHT + BRICK_SPACING_Y),
 		width  = BRICK_WIDTH,
 		height = BRICK_HEIGHT,
 		col   = data.col,
@@ -336,4 +417,26 @@ function create_brick(data,col,row)
 		flash = 0,
 		alive = true
 	})					
+end
+
+function check_bullet_bricks(bullet)
+
+	for brick in all(bricks) do
+	
+		if brick.alive and
+         bullet.x >= brick.x and
+         bullet.x <= brick.x + brick.width and
+         bullet.y >= brick.y and
+         bullet.y <= brick.y + brick.height then
+			
+			damage_brick(brick)
+			--del(bullets,bullet)
+			sfx(3)
+			return true
+		
+		end
+	end
+
+	return false
+
 end
