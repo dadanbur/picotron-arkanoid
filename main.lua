@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-08-03 15:53:16",revision=828]]
+--[[pod_format="raw",created="2026-07-26 19:51:34",modified="2026-08-04 09:33:38",revision=830]]
 ----------------------------------------------------------------------
 -- MAIN
 ----------------------------------------------------------------------
@@ -29,10 +29,6 @@ include "./font.lua"
 function _init()
 	init_palette()
 	init_font()
-
-	ball = create_ball()
-	add(balls, ball)
-
 	start_game()
 end
 

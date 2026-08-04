@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:06:58",modified="2026-08-03 09:31:33",revision=23]]
+--[[pod_format="raw",created="2026-08-01 08:06:58",modified="2026-08-04 08:44:16",revision=24]]
 ----------------------------------------------------------------------
 -- POWERUPS
 ----------------------------------------------------------------------
@@ -23,7 +23,7 @@ POWERUP_MEGA			= 5
 POWERUP_DISRUPTION	= 6
 POWERUP_LASER			= 7
 POWERUP_BREAK			= 8
-POWERUP_DEMO			= POWERUP_MEGA
+POWERUP_DEMO			= POWERUP_CATCH
 
 powerup_types = {
     [POWERUP_SLOW] = { 

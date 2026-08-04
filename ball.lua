@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:09:35",modified="2026-08-02 18:26:06",revision=12]]
+--[[pod_format="raw",created="2026-08-01 08:09:35",modified="2026-08-04 09:28:17",revision=48]]
 ----------------------------------------------------------------------
 -- BALL
 ----------------------------------------------------------------------
@@ -21,27 +21,33 @@ function draw_balls()
 end
 
 function draw_ball(ball)
+	local ball_x = ball.x - ball.r
+	local ball_y = ball.y - ball.r
+	
 	--SHADOW
 	palt(1,true)
 	palt(0,false)
-	spr(3,ball.x+2,ball.y+2)	
+	spr(3,ball_x + 2,ball_y + 2)	
 	palt()
 
 	--BALL
-	spr(ball.sprite,ball.x,ball.y)	
+	spr(ball.sprite,ball_x,ball_y)	
 end
 
 
 function update_stuck_ball(ball)
 	-- Keep the ball attached to the paddle
-	ball.x = pad.x + flr(pad.width / 2) - ball.r
+	--ball.x = pad.x + flr(pad.width / 2) - ball.r
+	ball.x = pad.x + pad.stuck_catch
 	ball.y = pad.y - ball.r - 2
 	
 	-- Launch on X
 	if ball.stuck and btnp(5) then
-		--ball.dy = -ball.dy
-		ball.dy = -abs(ball.dy)
+		-- Calculate launch direction from current ball position
+		ball.dx, ball.dy = get_paddle_direction(ball.x)
+		--ball.dy = -abs(ball.dy)
 	   ball.stuck = false
+	   pad.stuck_catch = 0
 	end
 	
 end
@@ -114,11 +120,31 @@ end
 
 function reset_ball(ball)
 	ball.stuck = true
+	pad.stuck_catch = flr(pad.width / 2) + 4
 
-	ball.x = pad.x + flr(pad.width / 2)
+	ball.x = pad.x + pad.stuck_catch
 	ball.y = pad.y - ball.r
 
 end
+
+
+function get_paddle_direction(ball_x)
+	-- Calculate impact position (0 = left, 1 = right)
+	local hit = (ball_x - pad.x) / pad.width
+	
+	-- Convert to range [-1, 1]
+	hit = hit * 2 - 1
+	
+	-- Set direction
+	local dx = hit
+	local dy = -1
+	
+	-- Normalize direction
+	local len = sqrt(dx * dx + dy * dy)
+	
+	return dx / len, dy / len
+end
+
 
 function check_ball_paddle(ball)
 
@@ -139,26 +165,12 @@ function check_ball_paddle(ball)
 		
 		if has_powerup(POWERUP_CATCH) then
 		   ball.stuck = true
-			ball.x = ball.x - pad.x
-			--pad.stuck_catch = ball.x - pad.x
+			pad.stuck_catch = ball.x - pad.x
 			return
 		end	
 		
-		-- Calculate the impact position (0 = left, 1 = right)
-		local hit = (ball.x - pad.x) / pad.width
-		
-		-- Convert to the range [-1, 1]
-		hit = hit * 2 - 1
-		
-		-- Set the new direction
-		ball.dx = hit
-		ball.dy = -1
-		
-		-- Normalize the direction vector
-		local len = sqrt(ball.dx * ball.dx + ball.dy * ball.dy)
-		
-		ball.dx /= len
-		ball.dy /= len
+		-- Calculate bounce direction
+		ball.dx, ball.dy = get_paddle_direction(ball.x)
 		
 		sfx(1)
 	end
@@ -191,7 +203,7 @@ function create_ball()
 		y = SCREEN_HEIGHT - (PADDLE_HEIGHT + PADDLE_BOTTOM_MARGIN),
 		old_x = 0,
 		old_y = 0,
-		r = 3,
+		r = 2,
 		dx = BALL_DIAG,
 		dy = -BALL_DIAG,
 		sprite = BALL_SPRITE,

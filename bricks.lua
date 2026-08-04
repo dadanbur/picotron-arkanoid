@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:05:32",modified="2026-08-03 16:14:23",revision=20]]
+--[[pod_format="raw",created="2026-08-01 08:05:32",modified="2026-08-04 08:56:04",revision=21]]
 ----------------------------------------------------------------------
 -- BRICKS
 ----------------------------------------------------------------------
@@ -294,47 +294,6 @@ function damage_brick(brick)
 	end
 end
 
-function hit_brick_old(brick,ball)
-    damage_brick(brick)
-
-    -- Mega Ball does not bounce on destructible bricks
-    if ball.mega and brick.hits >= 0 then
-    	return
-    end
-
-    local from_left   = ball.old_x + ball.r <= brick.x
-    local from_right  = ball.old_x - ball.r >= brick.x + brick.width
-    local from_top    = ball.old_y + ball.r <= brick.y
-    local from_bottom = ball.old_y - ball.r >= brick.y + brick.height
-
-    if from_left then
-        ball.dx = -ball.dx
-        ball.x = brick.x - ball.r
-    elseif from_right then
-        ball.dx = -ball.dx
-        ball.x = brick.x + brick.width + ball.r
-    elseif from_top then
-        ball.dy = -ball.dy
-        ball.y = brick.y - ball.r
-    elseif from_bottom then
-        ball.dy = -ball.dy
-        ball.y = brick.y + brick.height + ball.r
-    else
-        -- Fallback: bola ya dentro del ladrillo (esquina, alta velocidad)
-        -- Usar el eje con menor solapamiento
-        local ox = min((ball.x + ball.r) - brick.x, (brick.x + brick.width) - (ball.x - ball.r))
-        local oy = min((ball.y + ball.r) - brick.y, (brick.y + brick.height) - (ball.y - ball.r))
-        if ox < oy then
-            ball.dx = -ball.dx
-        else
-            ball.dy = -ball.dy
-        end
-    end
-
-    if brick.type == 9 or brick.type == 10 then
-        brick.flash = BRICK_FLASH
-    end
-end
 
 function hit_brick(brick, ball)
 

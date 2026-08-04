@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:00:00",modified="2026-08-03 14:54:20",revision=43]]
+--[[pod_format="raw",created="2026-08-01 08:00:00",modified="2026-08-04 09:29:43",revision=44]]
 ----------------------------------------------------------------------
 -- STATE MACHINE
 ----------------------------------------------------------------------
@@ -15,7 +15,6 @@ state_manager = {
 }
 
 function change_state(new_state)
-
 	if state_manager.current and state_manager.current.leave then
 		state_manager.current.leave()
 	end
@@ -41,7 +40,6 @@ end
 ----------------------------------------------------------------------
 
 function gameplay_enter()
-
 end
 
 function gameplay_draw()

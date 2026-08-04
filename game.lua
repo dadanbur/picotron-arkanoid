@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:20:22",modified="2026-08-03 10:06:07",revision=98]]
+--[[pod_format="raw",created="2026-08-01 08:20:22",modified="2026-08-04 09:31:19",revision=107]]
 ----------------------------------------------------------------------
 -- GAME
 ----------------------------------------------------------------------
@@ -15,18 +15,31 @@ function start_game()
     lives = 3
     score = 0
     round = 1
-    ball.stuck = true
     
     if demo_mode then
     	lives = 300
     	round = 1
     end
+    
+    balls = {}
+    laser_shots = {}
+    pills = {}
+    active_powerups = {}    
+
+    pad.width = PADDLE_WIDTH
+    pad.laser = false
+    pad.sprite = PADDLE_SPRITE
+    pad.animation = PADDLE_ANIMATION
+    pad.dx = 0
+    
+    local ball = create_ball()
+    add(balls, ball)
+    reset_ball(ball)    
+        
     change_state(intro_state)
 end
 
 function init_level()
-	ball.stuck = true
-	
 	deactivate_all_powerups()
 	active_powerups = {}
 	pills = {}
@@ -53,8 +66,8 @@ function next_round()
 
     create_level(round)
     balls = {}
-    local b = create_ball()
-    add(balls, b)
+    local ball = create_ball()
+    add(balls, ball)
     reset_ball(ball)
 
 end
@@ -180,8 +193,6 @@ function draw_game_area()
        GAME_BOTTOM,
        1
    )
-	local tile_w = 23
-	local tile_h = 16
 		
 	local background = levels[round].background or 192
 
