@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:01:39",modified="2026-08-02 18:06:00",revision=17]]
+--[[pod_format="raw",created="2026-08-01 08:01:39",modified="2026-08-04 18:29:51",revision=49]]
 ----------------------------------------------------------------------
 -- PADDLE
 ----------------------------------------------------------------------
@@ -70,15 +70,15 @@ function draw_pad_shadow()
 	palt(0, false)
 	
 	-- Left cap
-	sspr(11, 0, 0, EDGE_WIDTH, SPRITE_HEIGHT, shadow_x, shadow_y)
+	sspr(PADDLE_SPRITE_SHADOW, 0, 0, EDGE_WIDTH, SPRITE_HEIGHT, shadow_x, shadow_y)
 	
 	-- Center
 	for x = EDGE_WIDTH + 1, pad.width - EDGE_WIDTH + 1 do
-	    sspr(11, EDGE_WIDTH, 0, 1, SPRITE_HEIGHT, shadow_x + x, shadow_y)
+	    sspr(PADDLE_SPRITE_SHADOW, EDGE_WIDTH, 0, 1, SPRITE_HEIGHT, shadow_x + x, shadow_y)
 	end
 	
 	-- Right cap
-	sspr(11, 9, 0, EDGE_WIDTH, SPRITE_HEIGHT, shadow_x + pad.width - 4, shadow_y)
+	sspr(PADDLE_SPRITE_SHADOW, 9, 0, EDGE_WIDTH, SPRITE_HEIGHT, shadow_x + pad.width - 4, shadow_y)
 	
 	palt()
 
@@ -97,14 +97,18 @@ function fire_lasers()
 				y = pad.y - 6,
 				width = 1,
 				height = 2,
-				speed = 6
+				sprite = 4,
+				speed = 6,
+				duration = 10
 			},
 			{
 				x = pad.x + pad.width - 10,
 				y = pad.y - 6,
 				width = 1,
 				height = 2,
-				speed = 6
+				sprite = 4,
+				speed = 6,
+				duration = 10
 			}
 		}
 	}
@@ -130,7 +134,7 @@ function update_bullets()
 				break
          end
 		end
-		if delete then
+		if delete then			
 			del(laser_shots, shot)
 		end	
 	end
@@ -139,7 +143,9 @@ end
 function draw_bullets()
 	for shot in all(laser_shots) do
 		for bullet in all(shot.bullets) do
-			spr(4, bullet.x, bullet.y)
+			spr(bullet.sprite, bullet.x, bullet.y)
 		end
 	end
 end
+
+

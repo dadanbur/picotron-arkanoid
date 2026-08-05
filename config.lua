@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 07:55:13",modified="2026-08-04 09:29:18",revision=14]]
+--[[pod_format="raw",created="2026-08-01 07:55:13",modified="2026-08-04 11:59:38",revision=18]]
 ----------------------------------------------------------------------
 -- CONFIG
 ----------------------------------------------------------------------
@@ -50,9 +50,10 @@ PADDLE_WIDTH_LARGE = 48
 PADDLE_HEIGHT = 8
 PADDLE_BOTTOM_MARGIN = 18
 PADDLE_SPRITE = 8
+PADDLE_SPRITE_SHADOW = 12
 PADDLE_SPRITE_LASER = 16
-PADDLE_ANIMATION = {8, 9, 10, 9}
-PADDLE_ANIMATION_LASER = {16, 17, 18, 17}
+PADDLE_ANIMATION = {8, 9, 10, 11, 10, 9}
+PADDLE_ANIMATION_LASER = {16, 17, 18, 19, 18, 17}
 PADDLE_ANIMATION_SPEED = 3
 	
 BRICK_WIDTH  = 16
