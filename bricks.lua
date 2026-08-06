@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:05:32",modified="2026-08-06 12:24:23",revision=73]]
+--[[pod_format="raw",created="2026-08-01 08:05:32",modified="2026-08-06 16:41:20",revision=86]]
 ----------------------------------------------------------------------
 -- BRICKS
 ----------------------------------------------------------------------
@@ -70,6 +70,7 @@ end
 function draw_bricks_shadow()
 	local shadow_size = 3
 	local shadow_color = levels[round].shadow_color or SHADOW_COLOR
+	
 	for brick in all(bricks) do
 		if brick.alive then	
 			-- Brick body

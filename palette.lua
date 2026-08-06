@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-07-27 00:04:05",modified="2026-08-01 09:19:02",revision=26]]
+--[[pod_format="raw",created="2026-07-27 00:04:05",modified="2026-08-06 16:40:33",revision=47]]
 ----------------------------------------------------------------------
 -- PALETTE
 ----------------------------------------------------------------------
@@ -12,36 +12,90 @@
 
 function init_palette()
 
-	PALETTE={
-	   "F8F8F8", --WHITE
-		"F87800", --ORANGE
-		"00B8F8", --CYAN
-		"00B800", --GREEN
-		"F80000", --RED
-		"0058F8", --BLUE
-		"F800F8", --VIOLET
-		"F8F800", --YELLOW
-		"B0B0B0", --SILVER
-		"F8B800", --GOLDEN
-		"BC1F00","FF5100","626262","8F8F8F","00009D","008FFF","00FFFF", -- SHIP
-		"000062","000063","000070","000071","00008f","000090","00009D","00009E","0000AF","0000BC","0000BD", -- BLUE
-		"006200","006300","008F00","009000","00AE00","00AF00",
-		"F80000", -- Bright red
-		"C00000", -- Red
-		"880000", -- Dark red
-		"500000"  -- Very dark red
+	PALETTE = {
+		-- Original Arkanoid colors
+		{pos=6,  color="B0B0B0"}, -- SILVER
+		{pos=7,  color="F8F8F8"}, -- WHITE
+		{pos=8,  color="F80000"}, -- RED
+		{pos=9,  color="F87800"}, -- ORANGE
+		{pos=10, color="F8F800"}, -- YELLOW
+		{pos=11, color="00B800"}, -- GREEN
+		{pos=16, color="0058F8"}, -- BLUE
+		{pos=25, color="F8B800"}, -- GOLDEN
+		{pos=28, color="00B8F8"}, -- CYAN
+		{pos=30, color="F800F8"}, -- VIOLET
+	
+		-- Ship
+		{pos=33, color="BC1F00"},
+		{pos=34, color="FF5100"},
+		{pos=35, color="626262"},
+		{pos=36, color="8F8F8F"},
+		{pos=37, color="00009D"},
+		{pos=38, color="008FFF"},
+		{pos=39, color="00FFFF"},
+	
+		-- Blue shades
+		{pos=40, color="000062"},
+		{pos=41, color="000063"},
+		{pos=42, color="000070"},
+		{pos=43, color="000071"},
+		{pos=44, color="00008f"},
+		{pos=45, color="000090"},
+		{pos=46, color="00009D"},
+		{pos=47, color="00009E"},
+		{pos=48, color="0000AF"},
+		{pos=49, color="0000BC"},
+		{pos=50, color="0000BD"},
+	
+		-- Green shades
+		{pos=51, color="006200"},
+		{pos=52, color="006300"}, -- "002d00"
+		
+		{pos=53, color="008F00"},
+		{pos=54, color="009000"}, -- "005100"
+		
+		{pos=55, color="00AE00"},
+		{pos=56, color="00AF00"}, -- "007000"
+	
+		-- Red shades
+		{pos=57, color="F80000"}, -- Bright red
+		{pos=58, color="C00000"}, -- Red
+		{pos=59, color="880000"}, -- Dark red
+		{pos=60, color="500000"}  -- Very dark red
 	}
 
-	PALETTE_POS={
-		7,9,28,11,8,16,30,10,6,25,
-		33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,
-		48,49,50,51,52,53,54,55,56,57,58,59,60,61,62,63		
-	}
-
-	set_pallete_colors()
+	set_palette_colors()
+	--init_shadow_table()
 end
 
-function set_pallete_colors()
+function set_palette_colors()
+	for _, palette_entry in ipairs(PALETTE) do
+		local palette_color = palette_entry.pos
+		local decimal_color = hex_to_decimal(palette_entry.color)
+
+		set_color(palette_color, decimal_color)
+	end
+
+	find_gfx_map_pids()
+	send_palette()
+end
+
+function init_shadow_table()
+    -- Tabla 0: 0x8000
+
+    -- Por defecto, conservar el color existente
+    for target = 0, 63 do
+        poke(0x8000 + 51 * 64 + target, target)
+    end
+
+    -- Sustituciones de sombra
+    poke(0x8000 + 32 * 64 + 51, 52)
+    poke(0x8000 + 32 * 64 + 53, 54)
+    poke(0x8000 + 32 * 64 + 55, 56)
+end
+
+
+function set_pallete_colors_old()
 	local base_color = 33
 	for i=1,#PALETTE do 
 		local palette_color=PALETTE_POS[i]
