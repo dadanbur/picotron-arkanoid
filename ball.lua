@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:09:35",modified="2026-08-04 09:28:17",revision=48]]
+--[[pod_format="raw",created="2026-08-01 08:09:35",modified="2026-08-06 12:26:06",revision=67]]
 ----------------------------------------------------------------------
 -- BALL
 ----------------------------------------------------------------------
@@ -65,6 +65,12 @@ function update_ball(ball)
 		return
 	end
 
+	ball.stuck_timer += 1
+	if ball.stuck_timer >= BALL_STUCK_TIMEOUT then
+		nudge_ball(ball)
+		ball.stuck_timer = 0
+	end
+
 	ball.old_x = ball.x
 	ball.old_y = ball.y
 
@@ -125,6 +131,10 @@ function reset_ball(ball)
 	ball.x = pad.x + pad.stuck_catch
 	ball.y = pad.y - ball.r
 
+	--ball.stuck = false
+	--ball.y = 150
+	ball.gold_hits = 0
+
 end
 
 
@@ -160,6 +170,8 @@ function check_ball_paddle(ball)
 	and ball.y + ball.r >= pad.y
 	and ball.y - ball.r <= pad.y + pad.height then
 	
+		ball.stuck_timer = 0
+	
 		-- Place the ball above the paddle
 		ball.y = pad.y - ball.r
 		
@@ -178,22 +190,18 @@ function check_ball_paddle(ball)
 end
 
 function check_ball_bricks(ball)
-
-	for brick in all(bricks) do
-	
+	for brick in all(bricks) do	
 		if brick.alive
 			and ball.x + ball.r >= brick.x
 			and ball.x - ball.r <= brick.x + brick.width
 			and ball.y + ball.r >= brick.y
 			and ball.y - ball.r <= brick.y + brick.height then
-			
-			hit_brick(brick,ball)
+				
 			sfx(3)
+			hit_brick(brick,ball)
 			return
-		
 		end
 	end
-
 end
 
 
@@ -209,7 +217,9 @@ function create_ball()
 		sprite = BALL_SPRITE,
 		speed = BALL_SPEED_NORMAL,
 		stuck = true,
-		mega = false
+		mega = false,
+		gold_hits = 0,
+		stuck_timer = 0
 	}
 	
 	return ball
