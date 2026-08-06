@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 07:55:13",modified="2026-08-04 11:59:38",revision=18]]
+--[[pod_format="raw",created="2026-08-01 07:55:13",modified="2026-08-06 08:39:30",revision=26]]
 ----------------------------------------------------------------------
 -- CONFIG
 ----------------------------------------------------------------------
@@ -70,6 +70,11 @@ BALL_SPEED_SLOW   = 1.5
 BALL_SPRITE = 1
 BALL_SPRITE_MEGA = 2
 BALL_DIAG = 1 / sqrt(2)
+
+GOLD_HITS_MAX = 10
+GOLD_DEFLECT = 0.2
+BALL_STUCK_TIMEOUT = 480
+BALL_NUDGE_STRENGTH = 0.35
 
 SPR_PILL_SHADOW = 48
 

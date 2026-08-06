@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:05:32",modified="2026-08-04 08:56:04",revision=21]]
+--[[pod_format="raw",created="2026-08-01 08:05:32",modified="2026-08-06 12:24:23",revision=73]]
 ----------------------------------------------------------------------
 -- BRICKS
 ----------------------------------------------------------------------
@@ -294,6 +294,118 @@ function damage_brick(brick)
 	end
 end
 
+function deflect_ball(ball, angle)
+	local angle1 = atan2(ball.dy, ball.dx)
+	local cos_a = cos(angle)
+	local sin_a = sin(angle)
+	
+	local dx = ball.dx * cos_a - ball.dy * sin_a
+	local dy = ball.dx * sin_a + ball.dy * cos_a
+	
+	local length = sqrt(dx * dx + dy * dy)
+	
+	ball.dx = dx / length
+	ball.dy = dy / length
+	
+	if demo_mode then
+		local angle2 = atan2(ball.dy, ball.dx)
+		printh(
+		    "DEFLECT BALL " ..
+		    " angle1=" .. angle1 ..
+		    " angle2=" .. angle2
+		)
+	end	
+end
+
+function nudge_ball(ball)
+	local BALL_NUDGE_STRENGTH  = 0.35
+	local angle1 = atan2(ball.dy, ball.dx)
+	ball.dx += (rnd(1) - 0.5) * BALL_NUDGE_STRENGTH
+	ball.dy += (rnd(1) - 0.5) * BALL_NUDGE_STRENGTH
+	
+	local magnitude = sqrt(ball.dx * ball.dx + ball.dy * ball.dy)
+	if magnitude > 0 then
+		ball.dx /= magnitude
+		ball.dy /= magnitude
+	end	
+	magnitude = sqrt(ball.dx * ball.dx + ball.dy * ball.dy)
+	
+	--clamp_ball_angle(ball)
+	if demo_mode then
+		printh(
+		    "NUDGE BALL " ..
+		    " dx=" .. ball.dx ..
+		    " dy=" .. ball.dy ..
+		    " magnitude=" .. magnitude
+		)
+	end	
+end
+
+function hit_brick_new(brick, ball)
+
+	-- Mega Ball passes through destructible bricks
+	-- but still bounces on indestructible gold bricks.
+	if ball.mega and brick.hits >= 0 then
+		damage_brick(brick)
+		return
+	end
+
+	-- Calculate the overlap between the ball and the brick.
+	local left = ball.x + ball.r - brick.x
+	local right = brick.x + brick.width - (ball.x - ball.r)
+	local top = ball.y + ball.r - brick.y
+	local bottom = brick.y + brick.height - (ball.y - ball.r)
+
+	local penetration_x = min(left, right)
+	local penetration_y = min(top, bottom)
+
+	-- Resolve the collision along the axis with the smallest penetration.
+	if penetration_x < penetration_y then
+
+		if ball.x < brick.x + brick.width / 2 then
+			ball.x = brick.x - ball.r
+			ball.dx = -abs(ball.dx)
+		else
+			ball.x = brick.x + brick.width + ball.r
+			ball.dx = abs(ball.dx)
+		end
+
+	else
+
+		if ball.y < brick.y + brick.height / 2 then
+			ball.y = brick.y - ball.r
+			ball.dy = -abs(ball.dy)
+		else
+			ball.y = brick.y + brick.height + ball.r
+			ball.dy = abs(ball.dy)
+		end
+
+	end
+
+	-- Damage the brick after resolving the collision.
+	if not ball.mega or brick.hits < 0 then
+		damage_brick(brick)
+	end
+
+	-- Flash silver/gold bricks.
+	if brick.type == 9 or brick.type == 10 then
+		brick.flash = BRICK_FLASH
+	end
+
+	-- Break periodic trajectories caused by indestructible bricks.
+	if brick.type == 10 then
+		ball.gold_hits += 1
+
+		if ball.gold_hits >= GOLD_HITS_MAX then
+			ball.gold_hits = 0
+			-- Add a controlled deflection here if needed.
+		end
+	else
+		ball.gold_hits = 0
+		ball.stuck_timer = 0
+	end
+end
+
 
 function hit_brick(brick, ball)
 
@@ -368,6 +480,22 @@ function hit_brick(brick, ball)
 	if brick.type == 9 or brick.type == 10 then
 		brick.flash = BRICK_FLASH
 	end
+
+	-- Break periodic trajectories caused by indestructible bricks
+	if brick.type == 10 then
+		ball.gold_hits += 1
+
+		if ball.gold_hits >= GOLD_HITS_MAX then
+			local angle = GOLD_DEFLECT * (rnd(1) < 0.5 and -1 or 1)
+			--deflect_ball(ball, angle)
+			--nudge_ball(ball)
+			ball.gold_hits = 0
+		end
+	else
+		ball.gold_hits = 0
+		ball.stuck_timer = 0
+	end	
+	
 end
 
 
@@ -397,7 +525,7 @@ function check_bullet_bricks(bullet)
          bullet.y <= brick.y + brick.height then
 			
 			damage_brick(brick)
-			--del(bullets,bullet)
+			del(bullets,bullet)
 			sfx(3)
 			return true
 		
