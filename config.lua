@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 07:55:13",modified="2026-08-06 17:38:57",revision=27]]
+--[[pod_format="raw",created="2026-08-01 07:55:13",modified="2026-08-11 17:31:55",revision=28]]
 ----------------------------------------------------------------------
 -- CONFIG
 ----------------------------------------------------------------------
@@ -79,3 +79,7 @@ BALL_NUDGE_STRENGTH = 0.35
 SPR_PILL_SHADOW = 48
 
 SHADOW_COLOR = 40
+
+SHADOW_COL = 32
+SHADOW_STENCIL_MASK = 0x7f7f7f7f
+SHADOW_DEFAULT_MASK = 0x3f3f3f

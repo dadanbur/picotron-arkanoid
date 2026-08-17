@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-07-27 00:04:05",modified="2026-08-06 16:40:33",revision=47]]
+--[[pod_format="raw",created="2026-07-27 00:04:05",modified="2026-08-11 18:28:41",revision=97]]
 ----------------------------------------------------------------------
 -- PALETTE
 ----------------------------------------------------------------------
@@ -10,62 +10,81 @@
 --   hex_to_decimal() -> parses a 6-digit hex string to an integer
 ----------------------------------------------------------------------
 
+PALETTE = {
+	-- Original Arkanoid colors
+	{pos=6,  color="B0B0B0"}, -- SILVER
+	{pos=7,  color="F8F8F8"}, -- WHITE
+	{pos=8,  color="F80000"}, -- RED
+	{pos=9,  color="F87800"}, -- ORANGE
+	{pos=10, color="F8F800"}, -- YELLOW
+	{pos=11, color="00B800"}, -- GREEN
+	{pos=16, color="0058F8"}, -- BLUE
+	{pos=25, color="F8B800"}, -- GOLDEN
+	{pos=28, color="00B8F8"}, -- CYAN
+	{pos=30, color="F800F8"}, -- VIOLET
+	
+	-- Ship
+	{pos=33, color="BC1F00"},
+	{pos=34, color="FF5100"},
+	{pos=35, color="626262"},
+	{pos=36, color="8F8F8F"},
+	{pos=37, color="00009D"},
+	{pos=38, color="008FFF"},
+	{pos=39, color="00FFFF"},
+
+	-- Blue shades
+	{pos=40, color="000062"},
+	{pos=41, color="000063"},
+	{pos=42, color="000070"},
+	{pos=43, color="000071"},
+	{pos=44, color="00008f"},
+	{pos=45, color="000090"},
+	{pos=46, color="00009D"},
+	{pos=47, color="00009E"},
+	{pos=48, color="0000AF"},
+	{pos=49, color="0000BC"},
+	{pos=50, color="0000BD"},
+
+	{pos=31, color="00002D"},
+	{pos=26, color="000062"}, 
+	{pos=27, color="000070"}, 
+
+	
+	-- Green shades
+	{pos=51, color="006200"},
+	{pos=52, color="006300"}, -- "002d00"
+	
+	{pos=53, color="008F00"},
+	{pos=54, color="009000"}, -- "005100"
+	
+	{pos=55, color="00AE00"},
+	{pos=56, color="00AF00"}, -- "007000"
+
+	-- Green shadows
+	{pos=57, color="002d00"}, 
+	{pos=58, color="002d00"}, 
+	{pos=59, color="005100"},
+	{pos=60, color="005100"},
+	{pos=61, color="007000"},
+	{pos=62, color="007000"},
+	
+	{pos=63, color="2D2D2D"},
+}
+
+-- Darkened lookups for the shadow colour table: colour index -> shadow index
+DARK_PALETTE = {
+	[5]=63  ,[6]=35,  [7]=35,  [8]=24,  [9]=58,  [10]=59, [11]=54,
+	[16]=37, [25]=59, [28]=47, [30]=49, [32]=40,
+	[33]=58, [34]=59, [35]=40, [36]=35, [37]=40, [38]=46, [39]=46,
+	[40]=31, [41]=31, [42]=26, [43]=26, [44]=27, [45]=27,
+	[46]=44, [47]=44, [48]=46, [49]=46, [50]=48,
+	[51]=57, [52]=58, [53]=59, [54]=60, [55]=61, [56]=62,
+	[57]=58, [58]=59, [59]=60, [60]=60
+}
+
 function init_palette()
-
-	PALETTE = {
-		-- Original Arkanoid colors
-		{pos=6,  color="B0B0B0"}, -- SILVER
-		{pos=7,  color="F8F8F8"}, -- WHITE
-		{pos=8,  color="F80000"}, -- RED
-		{pos=9,  color="F87800"}, -- ORANGE
-		{pos=10, color="F8F800"}, -- YELLOW
-		{pos=11, color="00B800"}, -- GREEN
-		{pos=16, color="0058F8"}, -- BLUE
-		{pos=25, color="F8B800"}, -- GOLDEN
-		{pos=28, color="00B8F8"}, -- CYAN
-		{pos=30, color="F800F8"}, -- VIOLET
-	
-		-- Ship
-		{pos=33, color="BC1F00"},
-		{pos=34, color="FF5100"},
-		{pos=35, color="626262"},
-		{pos=36, color="8F8F8F"},
-		{pos=37, color="00009D"},
-		{pos=38, color="008FFF"},
-		{pos=39, color="00FFFF"},
-	
-		-- Blue shades
-		{pos=40, color="000062"},
-		{pos=41, color="000063"},
-		{pos=42, color="000070"},
-		{pos=43, color="000071"},
-		{pos=44, color="00008f"},
-		{pos=45, color="000090"},
-		{pos=46, color="00009D"},
-		{pos=47, color="00009E"},
-		{pos=48, color="0000AF"},
-		{pos=49, color="0000BC"},
-		{pos=50, color="0000BD"},
-	
-		-- Green shades
-		{pos=51, color="006200"},
-		{pos=52, color="006300"}, -- "002d00"
-		
-		{pos=53, color="008F00"},
-		{pos=54, color="009000"}, -- "005100"
-		
-		{pos=55, color="00AE00"},
-		{pos=56, color="00AF00"}, -- "007000"
-	
-		-- Red shades
-		{pos=57, color="F80000"}, -- Bright red
-		{pos=58, color="C00000"}, -- Red
-		{pos=59, color="880000"}, -- Dark red
-		{pos=60, color="500000"}  -- Very dark red
-	}
-
 	set_palette_colors()
-	--init_shadow_table()
+	init_shadow_table()
 end
 
 function set_palette_colors()
@@ -81,19 +100,25 @@ function set_palette_colors()
 end
 
 function init_shadow_table()
-    -- Tabla 0: 0x8000
-
-    -- Por defecto, conservar el color existente
-    for target = 0, 63 do
-        poke(0x8000 + 51 * 64 + target, target)
-    end
-
-    -- Sustituciones de sombra
-    poke(0x8000 + 32 * 64 + 51, 52)
-    poke(0x8000 + 32 * 64 + 53, 54)
-    poke(0x8000 + 32 * 64 + 55, 56)
+	-- Table 1 (0x9000)
+	for s = 0, 63 do
+		for t = 0, 63 do
+			poke(0x9000 + s * 64 + t, t)
+		end
+	end
+	update_shadow_table()
 end
 
+function update_shadow_table()
+	-- Table 0 (0x8000) shadow row: each target pixel colour is remapped
+	-- to its darkened counterpart, plus the 0x40 stencil bit. Rebuilt
+	-- every frame because pal()/palt() reset colour table 0 (see font.lua).
+	local row = 0x8000 + SHADOW_COL * 64
+	for target = 0, 63 do
+		local shadow = DARK_PALETTE[target] or SHADOW_COLOR
+		poke(row + target, shadow | 0x40)
+	end
+end
 
 function set_pallete_colors_old()
 	local base_color = 33

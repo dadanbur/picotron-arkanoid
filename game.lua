@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:20:22",modified="2026-08-06 17:39:33",revision=120]]
+--[[pod_format="raw",created="2026-08-01 08:20:22",modified="2026-08-11 18:12:08",revision=131]]
 ----------------------------------------------------------------------
 -- GAME
 ----------------------------------------------------------------------
@@ -9,7 +9,7 @@
 -- Util:   check_collision() (AABB test shared across entities)
 ----------------------------------------------------------------------
 
-demo_mode = false
+demo_mode = true
 
 function start_game()
     lives = 3
@@ -18,7 +18,7 @@ function start_game()
     
     if demo_mode then
     	lives = 300
-    	round = 20
+    	round = 1
     end
     
     balls = {}
@@ -145,8 +145,12 @@ function draw_game_frame()
 end
 
 function draw_borders_shadow()
-	local shadow_size = 6
-	local shadow_color = levels[round].shadow_color or SHADOW_COLOR
+	local shadow_size = 8
+	--local shadow_color = levels[round].shadow_color or SHADOW_COLOR
+
+	local shadow_color = SHADOW_COL
+	update_shadow_table()
+	poke4(0x5508, SHADOW_STENCIL_MASK)
 
 --[[
 poke(0x550b, 0x3f)
@@ -182,6 +186,7 @@ fillp(
 
 --fillp()
 --poke(0x550b, 0x00)
+	poke4(0x5508, SHADOW_DEFAULT_MASK)
 
 end
 

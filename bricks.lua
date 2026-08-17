@@ -1,4 +1,4 @@
---[[pod_format="raw",created="2026-08-01 08:05:32",modified="2026-08-06 16:41:20",revision=86]]
+--[[pod_format="raw",created="2026-08-01 08:05:32",modified="2026-08-11 17:42:04",revision=94]]
 ----------------------------------------------------------------------
 -- BRICKS
 ----------------------------------------------------------------------
@@ -68,21 +68,29 @@ function create_level(level_index)
 end
 
 function draw_bricks_shadow()
-	local shadow_size = 3
-	local shadow_color = levels[round].shadow_color or SHADOW_COLOR
+	local shadow_dx = 5
+	local shadow_dy = 6	
+	local shadow_size = 5
+	--local shadow_color = levels[round].shadow_color or SHADOW_COLOR
+	
+	local shadow_color = SHADOW_COL
+	update_shadow_table()
+	poke4(0x5508, SHADOW_STENCIL_MASK)	
 	
 	for brick in all(bricks) do
 		if brick.alive then	
 			-- Brick body
 			rectfill(
-				brick.x + shadow_size,
-				brick.y + shadow_size,
+				brick.x + shadow_dx,
+				brick.y + shadow_dy,
 				brick.x + brick.width + shadow_size*2,
 				brick.y + brick.height + shadow_size*2,
 				shadow_color
 			)		
 		end
 	end
+
+	poke4(0x5508, SHADOW_DEFAULT_MASK)
 
 end
 
